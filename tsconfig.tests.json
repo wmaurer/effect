@@ -27,6 +27,8 @@
       // suite of `@effect/platform-node` which itself depends on `@effect/platform-node`).
       "effect": ["./packages/effect/src/index.ts"],
       "effect/*": ["./packages/effect/src/*.ts"],
+      "@effect/ai-amazon-bedrock": ["./packages/ai/amazon-bedrock/src/index.ts"],
+      "@effect/ai-amazon-bedrock/*": ["./packages/ai/amazon-bedrock/src/*.ts"],
       "@effect/ai-anthropic": ["./packages/ai/anthropic/src/index.ts"],
       "@effect/ai-anthropic/*": ["./packages/ai/anthropic/src/*.ts"],
       "@effect/ai-openai-compat": ["./packages/ai/openai-compat/src/index.ts"],
