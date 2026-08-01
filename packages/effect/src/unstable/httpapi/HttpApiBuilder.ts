@@ -921,63 +921,98 @@ type StreamEncoder = (response: unknown, context: Context.Context<never>) =>
   | undefined
 
 function makeStreamEncoder(endpoint: HttpApiEndpoint.Top): StreamEncoder | undefined {
-  const streamSchema = getStreamSuccessSchema(endpoint)
-  if (streamSchema === undefined) {
+  const streamSuccess = getStreamSuccessSchema(endpoint)
+  if (streamSuccess === undefined) {
     return undefined
   }
 
+  const streamSchema = streamSuccess.stream
   const hasBuffered = hasBufferedSuccess(endpoint)
   const status = HttpApiSchema.getStatusStream(streamSchema)
   const contentType = streamSchema.contentType
+  const encodeHeaders = streamSuccess.headers === undefined
+    ? undefined
+    : Schema.encodeUnknownEffect(streamSuccess.headers)
+
+  // With a headers wrapper the handler returns `{ headers, body: Stream }`;
+  // without one it returns the stream directly.
+  const takeStream = (response: unknown): Stream.Stream<unknown, unknown, unknown> | undefined => {
+    const value = encodeHeaders === undefined ? response : (response as any)?.body
+    return Stream.isStream(value) ? value as Stream.Stream<unknown, unknown, unknown> : undefined
+  }
+
+  const withHeaders = (
+    response: unknown,
+    make: (headers: Record<string, string> | undefined) => HttpServerResponse
+  ) =>
+    encodeHeaders === undefined
+      ? Effect.succeed(make(undefined))
+      : Effect.map(
+        encodeHeaders((response as any)?.headers),
+        (headers) => make(headers as Record<string, string>)
+      )
+
+  const mismatch = (response: unknown) =>
+    hasBuffered ? undefined : new Schema.SchemaError(
+      new SchemaIssue.InvalidValue(Option.some(response), { message: "Expected a streaming response" })
+    )
 
   if (HttpApiSchema.isStreamUint8Array(streamSchema)) {
     return (response, context) => {
-      if (!Stream.isStream(response)) {
-        return hasBuffered ? undefined : new Schema.SchemaError(
-          new SchemaIssue.InvalidValue(Option.some(response), { message: "Expected a streaming response" })
-        )
-      }
-
-      return Effect.succeed(Response.stream(
-        Stream.provideContext(
-          response as Stream.Stream<Uint8Array, unknown, unknown>,
-          context as Context.Context<unknown>
-        ),
-        { status, contentType }
-      ))
+      const stream = takeStream(response)
+      if (stream === undefined) return mismatch(response)
+      return withHeaders(response, (headers) =>
+        Response.stream(
+          Stream.provideContext(
+            stream as Stream.Stream<Uint8Array, unknown, unknown>,
+            context as Context.Context<unknown>
+          ),
+          { status, contentType, headers }
+        ))
     }
   }
 
   const sseEncoder = makeSseEncoder(streamSchema)
 
   return (response, context) => {
-    if (!Stream.isStream(response)) {
-      return hasBuffered ? undefined : new Schema.SchemaError(
-        new SchemaIssue.InvalidValue(Option.some(response), { message: "Expected a streaming response" })
-      )
-    }
-
-    return Effect.succeed(Response.stream(
-      Stream.provideContext(
-        encodeSseStream(response, sseEncoder),
-        context as Context.Context<unknown>
-      ),
-      { status, contentType }
-    ))
+    const stream = takeStream(response)
+    if (stream === undefined) return mismatch(response)
+    return withHeaders(response, (headers) =>
+      Response.stream(
+        Stream.provideContext(
+          encodeSseStream(stream, sseEncoder),
+          context as Context.Context<unknown>
+        ),
+        { status, contentType, headers }
+      ))
   }
 }
 
-function getStreamSuccessSchema(endpoint: HttpApiEndpoint.Top) {
+interface StreamSuccess {
+  readonly stream: HttpApiSchema.StreamSchema
+  readonly headers: Schema.Top | undefined
+}
+
+function getStreamSuccessSchema(endpoint: HttpApiEndpoint.Top): StreamSuccess | undefined {
   for (const schema of endpoint.success) {
-    if (HttpApiSchema.isStreamSchema(schema)) {
-      return schema
+    const body = HttpApiSchema.unwrapResponseSchema(schema)
+    if (HttpApiSchema.isStreamSchema(body)) {
+      return {
+        stream: body,
+        headers: HttpApiSchema.isWithHeaders(schema) ? schema.headers : undefined
+      }
     }
   }
 }
 
 function hasBufferedSuccess(endpoint: HttpApiEndpoint.Top): boolean {
   for (const schema of endpoint.success) {
-    if (Schema.isSchema(schema) && !HttpApiSchema.isStreamSchema(schema)) return true
+    if (
+      Schema.isSchema(schema) &&
+      !HttpApiSchema.isStreamSchema(HttpApiSchema.unwrapResponseSchema(schema))
+    ) {
+      return true
+    }
   }
   return endpoint.success.size === 0
 }
