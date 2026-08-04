@@ -722,27 +722,8 @@ const compilePath = (path: string) => {
   }
 }
 
-// An `encoding` override is only sound when `schemas` is a single member: it
-// forces every union branch onto that one content type, which would silently
-// flatten a genuinely mixed-encoding union. The overloads below make that
-// invariant a type error at the call site instead of a convention.
-function schemasToResponse(
-  schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>]
-): (response: HttpClientResponse.HttpClientResponse) => Effect.Effect<unknown, unknown, unknown>
-function schemasToResponse(
-  schemas: readonly [Schema.Constraint],
-  encoding: HttpApiSchema.ResponseEncoding
-): (response: HttpClientResponse.HttpClientResponse) => Effect.Effect<unknown, unknown, unknown>
-function schemasToResponse(
-  schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>],
-  encoding?: HttpApiSchema.ResponseEncoding
-) {
-  // The overloads above already reject an `encoding` override paired with a
-  // multi-member array at every call site, so the cast here only restates
-  // what the caller already proved.
-  const codec = encoding === undefined
-    ? toCodecArrayBuffer(schemas)
-    : toCodecArrayBuffer(schemas as readonly [Schema.Constraint], encoding)
+function schemasToResponse(schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>]) {
+  const codec = toCodecArrayBuffer(schemas)
   const decode = Schema.decodeEffect(codec)
   return (response: HttpClientResponse.HttpClientResponse) => Effect.flatMap(response.arrayBuffer, decode)
 }
@@ -756,9 +737,9 @@ function withHeadersToResponse(
   const body = schema.body
   const decodeBody = HttpApiSchema.isStreamSchema(body)
     ? streamToResponse(body)
-    // the wrapper's AST is authoritative for encoding: it carries the body's
-    // lifted annotation unless one was applied to the wrapper itself
-    : schemasToResponse([body as Schema.Constraint], HttpApiSchema.getResponseEncoding(schema.ast))
+    : schemasToResponse([
+      body.annotate({ "~httpApiEncoding": HttpApiSchema.getResponseEncoding(schema.ast) }) as Schema.Constraint
+    ])
   return (response) =>
     Effect.flatMap(
       decodeHeaders(response.headers),
@@ -985,23 +966,11 @@ const UnknownFromArrayBuffer = StringFromArrayBuffer.pipe(Schema.decodeTo(
   ])
 ))
 
-// See the comment on `schemasToResponse`: `encodingOverride` is only sound
-// for a single-member array, so the overloads below reject it otherwise.
-function toCodecArrayBuffer(
-  schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>]
-): Schema.Top
-function toCodecArrayBuffer(
-  schemas: readonly [Schema.Constraint],
-  encodingOverride: HttpApiSchema.ResponseEncoding
-): Schema.Top
-function toCodecArrayBuffer(
-  schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>],
-  encodingOverride?: HttpApiSchema.ResponseEncoding
-): Schema.Top {
+function toCodecArrayBuffer(schemas: readonly [Schema.Constraint, ...Array<Schema.Constraint>]): Schema.Top {
   return Schema.Union(schemas.map(onSchema))
 
   function onSchema(schema: Schema.Constraint) {
-    const encoding = encodingOverride ?? HttpApiSchema.getResponseEncoding(schema.ast)
+    const encoding = HttpApiSchema.getResponseEncoding(schema.ast)
     switch (encoding._tag) {
       case "Json": {
         // handle json codecs that transform void schemas to null

@@ -645,12 +645,11 @@ export const isWithHeaders = (u: unknown): u is WithHeaders<Schema.Top, Schema.T
   Schema.isSchema(u) && Predicate.hasProperty(u, WithHeadersTypeId)
 
 /** @internal */
-// Reuses `self.ast` so that annotations applied to the wrapper survive the rebuild.
 export const replaceWithHeaders = (
   self: WithHeaders<Schema.Top, Schema.Top>,
   headers: Schema.Top,
   body: Schema.Top
-): WithHeaders<Schema.Top, Schema.Top> => makeWithHeaders(self.ast, headers, body)
+): WithHeaders<Schema.Top, Schema.Top> => makeWithHeaders(SchemaAST.annotate(self.ast, {}), headers, body)
 
 function defaultStreamContentType(mode: StreamMode): string {
   switch (mode) {

@@ -930,6 +930,7 @@ function makeStreamEncoder(endpoint: HttpApiEndpoint.Top): StreamEncoder | undef
   const hasBuffered = hasBufferedSuccess(endpoint)
   const status = streamSuccess.status
   const contentType = streamSchema.contentType
+  const hasHeaders = streamSuccess.headers !== undefined
   const encodeHeaders = streamSuccess.headers === undefined
     ? undefined
     : Schema.encodeUnknownEffect(streamSuccess.headers)
@@ -937,7 +938,7 @@ function makeStreamEncoder(endpoint: HttpApiEndpoint.Top): StreamEncoder | undef
   // With a headers wrapper the handler returns `{ headers, body: Stream }`;
   // without one it returns the stream directly.
   const takeStream = (response: unknown): Stream.Stream<unknown, unknown, unknown> | undefined => {
-    const value = encodeHeaders === undefined ? response : (response as any)?.body
+    const value = hasHeaders ? (response as any)?.body : response
     return Stream.isStream(value) ? value as Stream.Stream<unknown, unknown, unknown> : undefined
   }
 
@@ -957,22 +958,11 @@ function makeStreamEncoder(endpoint: HttpApiEndpoint.Top): StreamEncoder | undef
       new SchemaIssue.InvalidValue(Option.some(response), { message: "Expected a streaming response" })
     )
 
-  if (HttpApiSchema.isStreamUint8Array(streamSchema)) {
-    return (response, context) => {
-      const stream = takeStream(response)
-      if (stream === undefined) return mismatch(response)
-      return withHeaders(response, (headers) =>
-        Response.stream(
-          Stream.provideContext(
-            stream as Stream.Stream<Uint8Array, unknown, unknown>,
-            context as Context.Context<unknown>
-          ),
-          { status, contentType, headers }
-        ))
-    }
-  }
-
-  const sseEncoder = makeSseEncoder(streamSchema)
+  const toBody: (
+    stream: Stream.Stream<unknown, unknown, unknown>
+  ) => Stream.Stream<Uint8Array, unknown, unknown> = HttpApiSchema.isStreamUint8Array(streamSchema)
+    ? (stream) => stream as Stream.Stream<Uint8Array, unknown, unknown>
+    : ((sseEncoder) => (stream) => encodeSseStream(stream, sseEncoder))(makeSseEncoder(streamSchema))
 
   return (response, context) => {
     const stream = takeStream(response)
@@ -980,7 +970,7 @@ function makeStreamEncoder(endpoint: HttpApiEndpoint.Top): StreamEncoder | undef
     return withHeaders(response, (headers) =>
       Response.stream(
         Stream.provideContext(
-          encodeSseStream(stream, sseEncoder),
+          toBody(stream),
           context as Context.Context<unknown>
         ),
         { status, contentType, headers }
@@ -1104,20 +1094,14 @@ function toResponseSchema(getStatus: (ast: SchemaAST.AST) => number) {
   const cache = new WeakMap<SchemaAST.AST, Schema.Top>()
 
   return (schema: Schema.Constraint): Schema.ConstraintEncoder<HttpServerResponse, unknown> => {
-    // `WithHeaders` transformations close over the instance's `headers` / `body`
-    // sub-schemas, which the opaque declaration AST does not describe, so the
-    // AST is not a sound cache key for them.
-    const cacheable = !HttpApiSchema.isWithHeaders(schema)
-    const cached = cacheable ? cache.get(schema.ast) : undefined
+    const cached = cache.get(schema.ast)
     if (cached !== undefined) {
       return cached as any
     }
     const responseSchema = $HttpServerResponse.pipe(
       Schema.decodeTo(schema, getResponseTransformation(getStatus, schema))
     )
-    if (cacheable) {
-      cache.set(schema.ast, responseSchema)
-    }
+    cache.set(schema.ast, responseSchema)
     return responseSchema
   }
 }
@@ -1175,11 +1159,11 @@ function getWithHeadersTransformation(
     decode,
     encode: (value: any) =>
       Effect.flatMap(
-        encodeBody(value?.body),
+        encodeBody(value.body),
         (encodedBody) =>
           Effect.flatMap(encodeResponse(encodedBody), (response) =>
             Effect.map(
-              encodeHeaders(value?.headers),
+              encodeHeaders(value.headers),
               (headers) => Response.setHeaders(response, headers as Record<string, string>)
             ))
       )

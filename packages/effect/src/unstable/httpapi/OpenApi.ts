@@ -751,8 +751,7 @@ function extractResponseBodies(
         addContent(body, status, HttpApiSchema.getResponseEncoding(schema.ast), description)
       }
     }
-    const entry = map.get(status)
-    if (entry === undefined) return
+    const entry = map.get(status)!
     entry.members += 1
     if (HttpApiSchema.isWithHeaders(schema)) {
       addResponseHeaders(entry.headers, schema.headers)
