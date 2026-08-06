@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Local-only nag for the @effect/ai-amazon-bedrock branch. Never blocks a push.
+# Remove with: rm "$(git rev-parse --git-common-dir)/hooks/pre-push"
+set -uo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+pkg="$root/packages/ai/amazon-bedrock/package.json"
+[ -f "$pkg" ] || exit 0   # no-op in worktrees without the package
+
+warn=0
+
+ours="$(node -p "require('$pkg').version" 2>/dev/null)"
+theirs="$(node -p "require('$root/packages/ai/anthropic/package.json').version" 2>/dev/null)"
+if [ -n "$ours" ] && [ -n "$theirs" ] && [ "$ours" != "$theirs" ]; then
+  echo "  - version is $ours, fixed group is at $theirs (bump packages/ai/amazon-bedrock/package.json)" >&2
+  warn=1
+fi
+
+if ! grep -q '"@effect/ai-amazon-bedrock"' "$root/.changeset/config.json"; then
+  echo "  - not in the 'fixed' group in .changeset/config.json" >&2
+  warn=1
+fi
+
+if [ "$warn" -eq 1 ]; then
+  echo "not-PR-ready (pushing anyway):" >&2
+  echo "  ^ fine for WIP pushes; fix before opening the PR" >&2
+fi
+
+exit 0
