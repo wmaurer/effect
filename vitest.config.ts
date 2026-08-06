@@ -96,6 +96,7 @@ export default defineConfig({
           exclude: isDeno ? ["test/cluster/**"] : []
         }
       }),
+      ...project("@effect/ai-amazon-bedrock", "packages/ai/amazon-bedrock"),
       ...project("@effect/ai-anthropic", "packages/ai/anthropic"),
       ...project("@effect/ai-openai", "packages/ai/openai"),
       ...project("@effect/ai-openai-compat", "packages/ai/openai-compat"),
