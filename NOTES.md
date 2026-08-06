@@ -37,6 +37,8 @@ requirements — WIP pushes to the `wmaurer` fork should never be gated.
       (compare against `packages/ai/anthropic/package.json`)
 - [ ] `pnpm-lock.yaml` regenerated with `pnpm install`, not hand-resolved
 - [ ] `pnpm check && pnpm lint && pnpm vitest run --project "@effect/ai-amazon-bedrock"` all clean
+- [ ] the `bedrock-live.ts` scratchpad dep is reverted (see section 7) —
+      `git status` must show no change to `scratchpad/package.json` or `pnpm-lock.yaml`
 
 **Why the first two matter:** the package was added on a fork at `beta.78` and never
 went through the upstream version process, so it was missing from the changeset `fixed`
@@ -139,3 +141,61 @@ Remove with `rm "$(git rev-parse --git-common-dir)/hooks/pre-push"`.
 
 Largely redundant now that the package is in the `fixed` group — keep it only if you
 want the belt-and-braces reminder.
+
+## 7. Live check against real Bedrock (`bedrock-live.ts`)
+
+`bedrock-live.ts` exercises tool calling, forced `toolChoice`, structured output and
+streaming-with-tools against the real `bedrock-runtime` endpoint. The unit tests all
+run against a mocked `HttpClient`, so this is the only thing that proves the request
+shape is actually accepted by AWS.
+
+**It lives here, not in the repo.** `scratchpad/**/*` is gitignored, and every existing
+`*.integration.test.ts` in the repo is testcontainers-backed and credential-free — CI
+sets `EFFECT_INTEGRATION_TESTS=1` unconditionally, so anything in that glob *runs
+upstream* and would fail without AWS credentials. No AI provider package has a live
+test; all five mock the HTTP layer. Keeping this off the feature branch is deliberate.
+
+### Running it
+
+```bash
+cp bedrock-live.ts <effect-worktree>/scratchpad/
+```
+
+Add the dep to `scratchpad/package.json` (tracked — revert before the PR):
+
+```json
+"@effect/ai-amazon-bedrock": "workspace:*",
+```
+
+Then:
+
+```bash
+pnpm install
+export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_REGION=us-east-1
+node scratchpad/bedrock-live.ts
+```
+
+Afterwards, to get back to a clean tree:
+
+```bash
+git checkout -- scratchpad/package.json pnpm-lock.yaml
+```
+
+A relative import (`../packages/ai/...`) would avoid the dep entirely, but
+`scratchpad/tsconfig.json` sets `rootDir: "."` so it fails `tsc` with TS6059. It still
+*runs* under Node's type stripping if you don't care about the typecheck.
+
+### Gotchas
+
+- **Static credentials only.** `AmazonBedrockClient.layer` takes `accessKeyId` /
+  `secretAccessKey` / `sessionToken` directly — there is no AWS credential-provider
+  chain, so `AWS_PROFILE` and SSO do not work. Materialize them first:
+  `eval "$(aws configure export-credentials --profile <p> --format env)"`.
+  That also exports `AWS_SESSION_TOKEN`, which the script picks up automatically and
+  which is **required** for temporary credentials.
+- **Model access is opt-in per account and region**, and costs real money per run.
+  Default is the Claude Sonnet 4.5 US inference profile; the `us.` prefix is a
+  cross-region inference profile, not a bare model ID. Override with `BEDROCK_MODEL_ID`.
+- The `GetWeather` handler logs `[handler] GetWeather invoked` when it actually fires.
+  Watch for that line — without it you cannot tell a real tool round trip from the
+  model merely narrating that it called a tool.
