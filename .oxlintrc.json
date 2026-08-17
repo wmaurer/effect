@@ -11,6 +11,7 @@
     "packages/effect/typeperf/**/*",
     "packages/effect/src/StandardSchema.ts",
     "packages/tools/graphql-generator/test/generated/**/*.graphql.ts",
+    "scripts/repos.js",
     "!scratchpad/**/*",
     "**/.*",
     "!.agents",
