@@ -947,6 +947,9 @@ importers:
 
   scratchpad:
     dependencies:
+      '@effect/ai-amazon-bedrock':
+        specifier: workspace:*
+        version: link:../packages/ai/amazon-bedrock
       '@effect/ai-anthropic':
         specifier: workspace:*
         version: link:../packages/ai/anthropic
