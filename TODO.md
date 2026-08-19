@@ -12,7 +12,7 @@ schema, the `fileSource` resolver and the media-type lookup-table pattern all al
 the image/document work, so this is mostly mechanical. Today a `video/*` file part fails with
 `InvalidUserInputError` naming the media type.
 
-## `DocumentSource.content`
+## `DocumentSource.content` and `DocumentBlock.context`
 
 `bytes`, `s3Location` and `text` are modelled; `content` is not. It carries a document as a list of
 pre-chunked `{ text }` blocks, and it is what makes chunk-granular citations meaningful:
@@ -20,7 +20,9 @@ pre-chunked `{ text }` blocks, and it is what makes chunk-granular citations mea
 nothing to index into unless the request supplied chunks. `Prompt.FilePart` carries a single `data`
 and cannot express "this document is these five sections", so modelling it means a new
 `amazonBedrock` file-part option carrying document payload rather than configuration — the first
-option in this repo to do so. That is the decision to make before implementing it.
+option in this repo to do so. That is the decision to make before implementing it. `DocumentBlock`
+also carries a `context` field ("contextual information about how the document should be processed
+or interpreted by the model when generating citations") which is likewise unmodelled.
 
 ## `ImageBlock.error`
 
