@@ -36,6 +36,35 @@ cannot send; such a citation is dropped rather than attributed to a document.
 The `systemTool` member of the `Tool` union is likewise unmodelled: it selects Bedrock-hosted tools
 this provider cannot invoke.
 
+## Verification gaps
+
+`smoke-bedrock.ts` is the only thing that has ever run against real AWS: four billed calls, one
+account, one region (`eu-west-1`), one model (`eu.anthropic.claude-sonnet-4-5-20250929-v1:0`), one
+run. It proved the non-streaming happy path end to end, and proved `cachePoint` reaches Bedrock in
+a position Bedrock honours. Everything below is covered by unit tests only.
+
+**Streaming has no live coverage at all.** `AmazonBedrockEventStream.ts` — the hand-rolled
+`vnd.amazon.eventstream` codec, prelude framing, header parsing, the CRC checks — plus streaming
+tool calls and reasoning deltas. This is the most fragile surface in the package and the one where
+unit tests prove the least, because the test frames were authored from the same reading of the spec
+as the parser. A `ConverseStream` smoke check is the highest-value thing to add.
+
+**Cache-write disjointness is inferred, not observed.** The oracle ran on a call where
+`cacheWriteInputTokens` was `0`, so the write term contributed nothing to `9 + 15800 + 0 + 5 =
+15814`. That equation matches whether writes are disjoint from `inputTokens` or included in them —
+only the _read_ side is proven. `smoke-bedrock.ts` captures raw usage for every call in `rawUsages`
+but runs the oracle over the last one only; running it over the first (cache-writing) call too
+would close this.
+
+**Error mapping rests on two observed 403s.** `ExpiredTokenException` and `AccessDeniedException`
+were hit by accident and drove the classification in `internal/errors.ts`.
+`UnrecognizedClientException`, `InvalidSignatureException` and `MissingAuthenticationTokenException`
+are mapped from AWS documentation and have never been reproduced.
+
+**Also unexercised against live AWS:** reasoning, citations, documents, images, the `1h` cache TTL
+(only `5m` was pinned and billed), and long-lived IAM key pairs — every call so far used a
+temporary `ASIA…` triple, so the no-session-token path is untested.
+
 ## Not this package
 
 Streaming structured output is a gap in `packages/effect`, not here. `LanguageModel.streamText`
