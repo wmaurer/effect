@@ -38,40 +38,53 @@ this provider cannot invoke.
 
 ## Verification gaps
 
-Every test in this package stubs the `HttpClient`, so nothing here is evidence about AWS itself.
-`packages/ai/amazon-bedrock/test/live/` holds checks that talk to real Bedrock; see its README for
-how to run them and why they cannot fire by accident. **That directory is temporary and comes out
-before the branch is squashed for the upstream PR** — these gaps are what it exists to close, and
-they stay open until a live run reports them green.
+Every test in this package stubs the `HttpClient`, so nothing here is evidence about AWS
+itself. `packages/ai/amazon-bedrock/test/live/` holds checks that talk to real Bedrock; see
+its README for how to run them and why they cannot fire by accident. **That directory is
+temporary and comes out before the branch is squashed for the upstream PR.**
 
-**Streaming.** `AmazonBedrockEventStream.ts` hand-rolls the `vnd.amazon.eventstream` framing and
-`test/utils.ts` hand-builds the frames the unit tests decode — both from the same reading of the AWS
-spec, so a shared misreading passes both. `AmazonBedrockStream.integration.test.ts` decodes bytes
-AWS actually produced, covering multi-frame text deltas and a tool call whose input JSON arrives
-split across `contentBlockDelta` frames. Reasoning deltas over the stream remain uncovered.
+The suites have been run green against real Bedrock in `eu-west-1` against Sonnet 4.5 via
+the EU geo inference profile. What that run settled, and what it did not:
 
-Note that the decoder does not validate CRCs at all — `AmazonBedrockEventStream.ts:54-56` documents
-this deliberately, and `test/utils.ts` writes zeroes into both CRC fields. Live bytes therefore
-prove nothing about frame integrity; nothing reads those fields. That is defensible over HTTPS, but
-it means a truncated or corrupted frame surfaces as a decode error rather than a checksum failure.
+**Closed.** Streaming decodes bytes AWS actually produced, over several frames, including a
+tool call whose input JSON is split across `contentBlockDelta` frames — so the parser and
+its hand-built unit-test fixtures no longer rest on a single shared reading of the spec.
+Cache checkpoints are written and read back at both `5m` and `1h`, with the usage
+identity `totalTokens == inputTokens + cacheRead + cacheWrite + outputTokens` asserted on
+the write call as well as the read, where the write term is actually non-zero. Image and
+document blocks round-trip, and citations come back as source parts resolving to the right
+document. The `x-amzn-errortype` values behind two of the five mapped exception shapes are
+pinned to the strings AWS sends: `UnrecognizedClientException` and
+`InvalidSignatureException`.
 
-**Cache-write disjointness.** The original oracle ran on a call where `cacheWriteInputTokens` was
-`0`, so the write term contributed nothing to `9 + 15800 + 0 + 5 = 15814` and the equation held
-whether writes were disjoint from `inputTokens` or included in them — only the _read_ side was ever
-proven. The cache-point check now asserts the identity over both calls, and gives the cached prefix
-a per-run nonce so the first call is always a genuine write rather than a hit on a warm 5-minute
-cache from an earlier run.
+**Found by doing this.** Converse accepts a `text` document source only alongside a
+citations config, and rejects an uncited one with "must set one of the following keys:
+bytes, s3Location". The provider converted every `text/*` document to a `text` source
+unconditionally, so uncited text, csv, html and markdown documents were rejected outright.
+The Smithy model lists `text` as an unconditional member of the `DocumentSource` union, so
+no amount of reading the spec would have shown this, and a stubbed test would only have
+confirmed the wrong shape.
 
-**Error mapping rests on two observed 403s.** `ExpiredTokenException` and `AccessDeniedException`
-were hit by accident and drove the classification in `internal/errors.ts`.
-`UnrecognizedClientException`, `InvalidSignatureException` and `MissingAuthenticationTokenException`
-are mapped from AWS documentation. Running the live suites with a syntactically valid but fake
-access key id does reach AWS and classifies as `InvalidKey` — but three exception shapes map to that
-kind, and the run did not capture `x-amzn-errortype`, so it does not pin down which one AWS sent.
+**Still open.** Reasoning is unexercised end to end, and cannot be: enabling extended
+thinking on an Anthropic model needs `additionalModelRequestFields` on the Converse
+request, which `ConverseRequest` does not model. The decode path for `reasoningContent`,
+the signature round-trip that lets a reasoning block be sent back in a later turn, and
+reasoning deltas over the stream are therefore all covered only by stubs. Modelling that
+field is the prerequisite, and is not currently on this list.
 
-**Also unexercised against live AWS:** reasoning, citations, documents, images, the `1h` cache TTL
-(only `5m` is pinned and billed), and long-lived IAM key pairs — every live call so far used a
-temporary `ASIA…` triple, so the no-session-token path is untested.
+The three remaining entries in the error table — `AccessDeniedException`,
+`ExpiredTokenException` and `MissingAuthenticationTokenException` — are still mapped from
+documentation alone. The first two were once observed by accident, before the header was
+being recorded.
+
+Long-lived IAM key pairs remain untested: every live call so far used a temporary `ASIA…`
+triple, so the no-session-token signing path has never run.
+
+Note also that the decoder does not validate CRCs at all — `AmazonBedrockEventStream.ts:54-56`
+documents this deliberately, and `test/utils.ts` writes zeroes into both CRC fields. Live
+bytes prove nothing about frame integrity; nothing reads those fields. That is defensible
+over HTTPS, but it means a truncated or corrupted frame surfaces as a decode error rather
+than a checksum failure.
 
 ## Not this package
 
