@@ -54,8 +54,8 @@ identity `totalTokens == inputTokens + cacheRead + cacheWrite + outputTokens` as
 the write call as well as the read, where the write term is actually non-zero. Image and
 document blocks round-trip, and citations come back as source parts resolving to the right
 document. The `x-amzn-errortype` values behind two of the five mapped exception shapes are
-pinned to the strings AWS sends: `UnrecognizedClientException` and
-`InvalidSignatureException`.
+pinned to the strings AWS sends: `UnrecognizedClientException`,
+`InvalidSignatureException` and `AccessDeniedException`.
 
 **Found by doing this.** Converse accepts a `text` document source only alongside a
 citations config, and rejects an uncited one with "must set one of the following keys:
@@ -72,13 +72,26 @@ the signature round-trip that lets a reasoning block be sent back in a later tur
 reasoning deltas over the stream are therefore all covered only by stubs. Modelling that
 field is the prerequisite, and is not currently on this list.
 
-The three remaining entries in the error table — `AccessDeniedException`,
-`ExpiredTokenException` and `MissingAuthenticationTokenException` — are still mapped from
-documentation alone. The first two were once observed by accident, before the header was
-being recorded.
+`AccessDeniedException` is now pinned too, from an unusual direction: a request that
+carries no `Authorization` header at all. That is documented as the
+`MissingAuthenticationTokenException` case, and Bedrock disagrees — it answers
+`AccessDeniedException` with the body `{"Message": "Authorization header is missing"}`, so
+the reader gets `InsufficientPermissions`, not `MissingKey`. It is also the only observed
+response that spells the body key `Message` rather than `message`, which the schema already
+accepts. Nothing observed so far produces `MissingAuthenticationTokenException` at all; the
+table entry may be dead weight inherited from the AWS-wide error set, and it is left in
+place because a wrong mapping costs more than an unused one.
 
-Long-lived IAM key pairs remain untested: every live call so far used a temporary `ASIA…`
-triple, so the no-session-token signing path has never run.
+`ExpiredTokenException` is the last entry still mapped from documentation alone, and cannot
+be provoked on demand: an absent or malformed session token is `UnrecognizedClientException`
+("The security token included in the request is invalid"), not an expired one, and the
+shortest token STS will issue lives fifteen minutes. Closing it means holding a genuinely
+expired token from an earlier session.
+
+Long-lived IAM key pairs remain untested end to end. The no-session-token _signing_ path now
+runs — signing without a session token produces a canonical request AWS accepts as far as
+key lookup, rather than one rejected as malformed — but every call that reached a model used
+a temporary `ASIA…` triple, so no `AKIA…` pair has ever been signed successfully.
 
 Note also that the decoder does not validate CRCs at all — `AmazonBedrockEventStream.ts:54-56`
 documents this deliberately, and `test/utils.ts` writes zeroes into both CRC fields. Live
