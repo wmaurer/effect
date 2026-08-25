@@ -38,31 +38,39 @@ this provider cannot invoke.
 
 ## Verification gaps
 
-`smoke-bedrock.ts` is the only thing that has ever run against real AWS: four billed calls, one
-account, one region (`eu-west-1`), one model (`eu.anthropic.claude-sonnet-4-5-20250929-v1:0`), one
-run. It proved the non-streaming happy path end to end, and proved `cachePoint` reaches Bedrock in
-a position Bedrock honours. Everything below is covered by unit tests only.
+Every test in this package stubs the `HttpClient`, so nothing here is evidence about AWS itself.
+`packages/ai/amazon-bedrock/test/live/` holds checks that talk to real Bedrock; see its README for
+how to run them and why they cannot fire by accident. **That directory is temporary and comes out
+before the branch is squashed for the upstream PR** — these gaps are what it exists to close, and
+they stay open until a live run reports them green.
 
-**Streaming has no live coverage at all.** `AmazonBedrockEventStream.ts` — the hand-rolled
-`vnd.amazon.eventstream` codec, prelude framing, header parsing, the CRC checks — plus streaming
-tool calls and reasoning deltas. This is the most fragile surface in the package and the one where
-unit tests prove the least, because the test frames were authored from the same reading of the spec
-as the parser. A `ConverseStream` smoke check is the highest-value thing to add.
+**Streaming.** `AmazonBedrockEventStream.ts` hand-rolls the `vnd.amazon.eventstream` framing and
+`test/utils.ts` hand-builds the frames the unit tests decode — both from the same reading of the AWS
+spec, so a shared misreading passes both. `AmazonBedrockStream.integration.test.ts` decodes bytes
+AWS actually produced, covering multi-frame text deltas and a tool call whose input JSON arrives
+split across `contentBlockDelta` frames. Reasoning deltas over the stream remain uncovered.
 
-**Cache-write disjointness is inferred, not observed.** The oracle ran on a call where
-`cacheWriteInputTokens` was `0`, so the write term contributed nothing to `9 + 15800 + 0 + 5 =
-15814`. That equation matches whether writes are disjoint from `inputTokens` or included in them —
-only the _read_ side is proven. `smoke-bedrock.ts` captures raw usage for every call in `rawUsages`
-but runs the oracle over the last one only; running it over the first (cache-writing) call too
-would close this.
+Note that the decoder does not validate CRCs at all — `AmazonBedrockEventStream.ts:54-56` documents
+this deliberately, and `test/utils.ts` writes zeroes into both CRC fields. Live bytes therefore
+prove nothing about frame integrity; nothing reads those fields. That is defensible over HTTPS, but
+it means a truncated or corrupted frame surfaces as a decode error rather than a checksum failure.
+
+**Cache-write disjointness.** The original oracle ran on a call where `cacheWriteInputTokens` was
+`0`, so the write term contributed nothing to `9 + 15800 + 0 + 5 = 15814` and the equation held
+whether writes were disjoint from `inputTokens` or included in them — only the _read_ side was ever
+proven. The cache-point check now asserts the identity over both calls, and gives the cached prefix
+a per-run nonce so the first call is always a genuine write rather than a hit on a warm 5-minute
+cache from an earlier run.
 
 **Error mapping rests on two observed 403s.** `ExpiredTokenException` and `AccessDeniedException`
 were hit by accident and drove the classification in `internal/errors.ts`.
 `UnrecognizedClientException`, `InvalidSignatureException` and `MissingAuthenticationTokenException`
-are mapped from AWS documentation and have never been reproduced.
+are mapped from AWS documentation. Running the live suites with a syntactically valid but fake
+access key id does reach AWS and classifies as `InvalidKey` — but three exception shapes map to that
+kind, and the run did not capture `x-amzn-errortype`, so it does not pin down which one AWS sent.
 
 **Also unexercised against live AWS:** reasoning, citations, documents, images, the `1h` cache TTL
-(only `5m` was pinned and billed), and long-lived IAM key pairs — every call so far used a
+(only `5m` is pinned and billed), and long-lived IAM key pairs — every live call so far used a
 temporary `ASIA…` triple, so the no-session-token path is untested.
 
 ## Not this package
