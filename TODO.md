@@ -49,13 +49,19 @@ the EU geo inference profile. What that run settled, and what it did not:
 **Closed.** Streaming decodes bytes AWS actually produced, over several frames, including a
 tool call whose input JSON is split across `contentBlockDelta` frames — so the parser and
 its hand-built unit-test fixtures no longer rest on a single shared reading of the spec.
-Cache checkpoints are written and read back at both `5m` and `1h`, with the usage
-identity `totalTokens == inputTokens + cacheRead + cacheWrite + outputTokens` asserted on
-the write call as well as the read, where the write term is actually non-zero. Image and
+A tool call is answered and sent back: the `toolResult` block, its `toolUseId` and the
+`toolConfig` that has to accompany it are accepted by Converse, and the model's next
+answer is built from the tool's output — the pairing Converse validates itself and a
+stubbed test cannot see. Cache checkpoints are written and read back at both `5m` and
+`1h`, with the usage identity
+`totalTokens == inputTokens + cacheRead + cacheWrite + outputTokens` asserted on the
+write call as well as the read, where the write term is actually non-zero. Image and
 document blocks round-trip, and citations come back as source parts resolving to the right
-document. The `x-amzn-errortype` values behind two of the five mapped exception shapes are
-pinned to the strings AWS sends: `UnrecognizedClientException`,
-`InvalidSignatureException` and `AccessDeniedException`.
+document. Three of the nine mapped Converse stop reasons are observed rather than assumed:
+`end_turn`, `tool_use`, and `max_tokens` forced with a one-token ceiling. The
+`x-amzn-errortype` values behind three of the five mapped exception shapes are pinned to
+the strings AWS sends: `UnrecognizedClientException`, `InvalidSignatureException` and
+`AccessDeniedException`.
 
 **Found by doing this.** Converse accepts a `text` document source only alongside a
 citations config, and rejects an uncited one with "must set one of the following keys:
@@ -81,6 +87,16 @@ response that spells the body key `Message` rather than `message`, which the sch
 accepts. Nothing observed so far produces `MissingAuthenticationTokenException` at all; the
 table entry may be dead weight inherited from the AWS-wide error set, and it is left in
 place because a wrong mapping costs more than an unused one.
+
+The remaining six stop reasons stay mapped from the Smithy model alone. `stop_sequence`
+is provokable and shares its target (`stop`) with `end_turn`; `content_filtered` and
+`guardrail_intervened` need a configured guardrail; the two `malformed_*` reasons need a
+model that misbehaves on demand. The `toolChoice` encodings are half covered: the
+`{ tool: { name } }` form runs live through `generateObject`, while `{ any: {} }` and
+`{ auto: {} }` are stub-only. Image and document `s3Location` sources are untested — they
+need a bucket and objects to point at. The 429 -> `RateLimitError` mapping has been seen
+in practice (it is why `--no-file-parallelism` exists) but is asserted nowhere, since
+provoking it means deliberately exceeding the account's token quota.
 
 `ExpiredTokenException` is the last entry still mapped from documentation alone, and cannot
 be provoked on demand: an absent or malformed session token is `UnrecognizedClientException`
