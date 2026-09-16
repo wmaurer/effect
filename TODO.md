@@ -4,6 +4,20 @@ Extensions deliberately scoped out while implementing streaming tool calls, reas
 images/documents, prompt caching, and citations. None of these are bugs; each is a Converse
 capability the provider does not model yet. Ordered by how likely they are to matter.
 
+## `additionalModelResponseFieldPaths`
+
+The read side of the Converse feature whose write side is now modelled.
+`additionalModelResponseFieldPaths` asks for model-specific response fields by JSON Pointer
+(`[ "/stop_sequence" ]`), and Converse returns them in `additionalModelResponseFields` — which
+lands in two places the Smithy model shows: on `ConverseResponse` and, for the streaming path,
+on `MessageStopEvent`.
+
+Neither side is modelled. The request half is worthless without the response half, and the
+response half has nowhere to go: it would need a provider-metadata carrier invented for it,
+with no caller waiting. `ConverseResponse` here already omits `trace`, `performanceConfig` and
+`serviceTier` by the same selectivity, so leaving this out is consistent rather than an
+oversight. Model both halves together or neither.
+
 ## Video blocks
 
 `VideoBlock` mirrors `ImageBlock` exactly: a format enum (`mkv`, `mov`, `mp4`, `webm`, `flv`,
@@ -63,6 +77,14 @@ document. Three of the nine mapped Converse stop reasons are observed rather tha
 the strings AWS sends: `UnrecognizedClientException`, `InvalidSignatureException` and
 `AccessDeniedException`.
 
+Reasoning is closed too, now that `ConverseRequest` models
+`additionalModelRequestFields` and extended thinking can be switched on. All three paths
+have seen bytes AWS produced: a `reasoningContent` block decodes carrying a non-empty
+`signature`; that signed block is sent back in a later turn and Converse — which validates
+the signature server-side — accepts it; and reasoning arrives over the stream as
+`reasoningContent` deltas followed by a separate delta carrying the signature, ahead of the
+visible answer.
+
 **Found by doing this.** Converse accepts a `text` document source only alongside a
 citations config, and rejects an uncited one with "must set one of the following keys:
 bytes, s3Location". The provider converted every `text/*` document to a `text` source
@@ -71,12 +93,14 @@ The Smithy model lists `text` as an unconditional member of the `DocumentSource`
 no amount of reading the spec would have shown this, and a stubbed test would only have
 confirmed the wrong shape.
 
-**Still open.** Reasoning is unexercised end to end, and cannot be: enabling extended
-thinking on an Anthropic model needs `additionalModelRequestFields` on the Converse
-request, which `ConverseRequest` does not model. The decode path for `reasoningContent`,
-the signature round-trip that lets a reasoning block be sent back in a later turn, and
-reasoning deltas over the stream are therefore all covered only by stubs. Modelling that
-field is the prerequisite, and is not currently on this list.
+The spelling that enables extended thinking is `thinking` with `{ type: "enabled",
+budget_tokens }` — the direct Anthropic API spelling, forwarded unchanged. This file
+previously recorded `reasoning_config` from the AWS documentation; that is wrong, and the
+AI SDK's Bedrock provider had it right. `additionalModelRequestFields` is a free-form
+document Converse hands to the model without interpreting, so the Smithy model could never
+have shown which spelling the model expects — only a live call could.
+`inferenceConfig.maxTokens` must exceed `budget_tokens`, since the budget is drawn from the
+same ceiling as the visible answer.
 
 `AccessDeniedException` is now pinned too, from an unusual direction: a request that
 carries no `Authorization` header at all. That is documented as the
@@ -88,7 +112,7 @@ accepts. Nothing observed so far produces `MissingAuthenticationTokenException` 
 table entry may be dead weight inherited from the AWS-wide error set, and it is left in
 place because a wrong mapping costs more than an unused one.
 
-The remaining six stop reasons stay mapped from the Smithy model alone. `stop_sequence`
+**Still open.** The remaining six stop reasons stay mapped from the Smithy model alone. `stop_sequence`
 is provokable and shares its target (`stop`) with `end_turn`; `content_filtered` and
 `guardrail_intervened` need a configured guardrail; the two `malformed_*` reasons need a
 model that misbehaves on demand. The `toolChoice` encodings are half covered: the
