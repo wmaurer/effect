@@ -78,8 +78,19 @@ export class Config extends Context.Service<
       >
     >
     & {
+      /**
+       * How much effort the model should put into its response.
+       *
+       * **Details**
+       *
+       * `output_config` is omitted from the generated request params above so
+       * that `format` stays owned by the provider, which derives it from the
+       * response format. Only `effort` is re-exposed, and it is typed from
+       * {@link Generated.BetaEffortLevel} rather than spelled out, so it cannot
+       * drift from the schema the rest of this module is generated against.
+       */
       readonly output_config?: {
-        readonly effort?: "low" | "medium" | "high" | null
+        readonly effort?: typeof Generated.BetaEffortLevel.Type | null
       }
       /**
        * Disables Claude's ability to use multiple tools to respond to a query.
