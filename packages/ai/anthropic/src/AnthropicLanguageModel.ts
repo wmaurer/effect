@@ -5,15 +5,26 @@
  * requests, then converts normal and streaming Anthropic responses back into
  * Effect AI response content with provider metadata.
  *
+ * @stability unstable
  * @since 4.0.0
  */
 /** @effect-diagnostics preferSchemaOverJson:skip-file */
+import * as AiError from "effect/ai/AiError"
+import { toCodecAnthropic } from "effect/ai/AnthropicStructuredOutput"
+import * as IdGenerator from "effect/ai/IdGenerator"
+import * as LanguageModel from "effect/ai/LanguageModel"
+import * as AiModel from "effect/ai/Model"
+import type * as Prompt from "effect/ai/Prompt"
+import type * as Response from "effect/ai/Response"
+import * as Tool from "effect/ai/Tool"
 import * as Arr from "effect/Array"
 import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
-import * as Encoding from "effect/Encoding"
+import * as Base64 from "effect/encoding/Base64"
 import { dual } from "effect/Function"
+import type * as HttpClientRequest from "effect/http/HttpClientRequest"
+import type * as HttpClientResponse from "effect/http/HttpClientResponse"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
@@ -23,16 +34,6 @@ import * as SchemaAST from "effect/SchemaAST"
 import * as Stream from "effect/Stream"
 import type { Span } from "effect/Tracer"
 import type { Mutable, Simplify } from "effect/Types"
-import * as AiError from "effect/unstable/ai/AiError"
-import { toCodecAnthropic } from "effect/unstable/ai/AnthropicStructuredOutput"
-import * as IdGenerator from "effect/unstable/ai/IdGenerator"
-import * as LanguageModel from "effect/unstable/ai/LanguageModel"
-import * as AiModel from "effect/unstable/ai/Model"
-import type * as Prompt from "effect/unstable/ai/Prompt"
-import type * as Response from "effect/unstable/ai/Response"
-import * as Tool from "effect/unstable/ai/Tool"
-import type * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
-import type * as HttpClientResponse from "effect/unstable/http/HttpClientResponse"
 import { AnthropicClient, type MessageStreamEvent } from "./AnthropicClient.ts"
 import { addGenAIAnnotations } from "./AnthropicTelemetry.ts"
 import type { AnthropicTool } from "./AnthropicTool.ts"
@@ -42,6 +43,7 @@ import * as InternalUtilities from "./internal/utilities.ts"
 /**
  * Known Anthropic Claude model identifiers exposed by the generated Anthropic schema.
  *
+ * @stability unstable
  * @category models
  * @since 4.0.0
  */
@@ -65,6 +67,7 @@ export type Model = (typeof Generated.Model)["members"][1]["Encoded"]
  * requests. Scoped configuration overrides defaults supplied to `model`,
  * `make`, or `layer`.
  *
+ * @stability unstable
  * @category services
  * @since 4.0.0
  */
@@ -103,6 +106,13 @@ export class Config extends Context.Service<
        */
       readonly structuredOutputs?: boolean | undefined
       /**
+       * Overrides model detection for mid-conversation system messages.
+       * Set to `false` to send all instructions in the top-level `system` field.
+       *
+       * @see https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages
+       */
+      readonly midConversationSystemMessages?: boolean | undefined
+      /**
        * Whether to use strict JSON schema validation for tool calls.
        *
        * **Details**
@@ -119,7 +129,7 @@ export class Config extends Context.Service<
 // Provider Options / Metadata
 // =============================================================================
 
-declare module "effect/unstable/ai/Prompt" {
+declare module "effect/ai/Prompt" {
   /**
    * Anthropic-specific options for system messages.
    *
@@ -128,6 +138,7 @@ declare module "effect/unstable/ai/Prompt" {
    * These options are used when translating system messages into Anthropic
    * request content.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -148,6 +159,7 @@ declare module "effect/unstable/ai/Prompt" {
    * These options are used when translating user messages into Anthropic
    * request content.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -168,6 +180,7 @@ declare module "effect/unstable/ai/Prompt" {
    * These options are used when replaying assistant messages in Anthropic
    * conversation history.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -188,6 +201,7 @@ declare module "effect/unstable/ai/Prompt" {
    * These options are used when converting tool results into Anthropic user
    * content blocks.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -207,6 +221,7 @@ declare module "effect/unstable/ai/Prompt" {
    *
    * Use when you use these options to control how text blocks are sent to Anthropic.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -227,6 +242,7 @@ declare module "effect/unstable/ai/Prompt" {
    * Preserves Claude thinking metadata when reasoning content is sent back to
    * Anthropic in later turns.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -262,6 +278,7 @@ declare module "effect/unstable/ai/Prompt" {
    * Controls document metadata, citations, and prompt caching for files sent to
    * Anthropic.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -300,6 +317,7 @@ declare module "effect/unstable/ai/Prompt" {
    * Carries Anthropic tool caller metadata, MCP metadata, and cache control for
    * tool use blocks.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -333,6 +351,7 @@ declare module "effect/unstable/ai/Prompt" {
    * Carries Anthropic MCP metadata and controls prompt caching for tool result
    * content.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -361,6 +380,7 @@ declare module "effect/unstable/ai/Prompt" {
    *
    * Controls prompt caching for human approval requests in conversations.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -380,6 +400,7 @@ declare module "effect/unstable/ai/Prompt" {
    *
    * Controls prompt caching for human approval responses in conversations.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -393,7 +414,7 @@ declare module "effect/unstable/ai/Prompt" {
   }
 }
 
-declare module "effect/unstable/ai/Response" {
+declare module "effect/ai/Response" {
   /**
    * Anthropic metadata attached when a reasoning block begins.
    *
@@ -402,6 +423,7 @@ declare module "effect/unstable/ai/Response" {
    * Includes Claude thinking metadata needed to continue reasoning-aware
    * conversations.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -432,6 +454,7 @@ declare module "effect/unstable/ai/Response" {
    *
    * Includes the signature for streamed Claude thinking content when available.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -455,6 +478,7 @@ declare module "effect/unstable/ai/Response" {
    *
    * Preserves Claude thinking or redacted thinking information for later turns.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -486,6 +510,7 @@ declare module "effect/unstable/ai/Response" {
    * Identifies Anthropic caller details and MCP tool metadata emitted by the
    * provider.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -515,6 +540,7 @@ declare module "effect/unstable/ai/Response" {
    * Identifies MCP tool metadata associated with provider-executed tool
    * results.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -539,6 +565,7 @@ declare module "effect/unstable/ai/Response" {
    *
    * Records the cited document span by character position or page number.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -583,6 +610,7 @@ declare module "effect/unstable/ai/Response" {
    *
    * Records cited URL text or web-search source freshness information.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -613,6 +641,7 @@ declare module "effect/unstable/ai/Response" {
    * Includes container state, context management information, stop details, and
    * token usage reported by Anthropic.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -632,6 +661,7 @@ declare module "effect/unstable/ai/Response" {
    *
    * Includes the provider request identifier when Anthropic returns one.
    *
+   * @stability unstable
    * @category models
    * @since 4.0.0
    */
@@ -657,6 +687,7 @@ declare module "effect/unstable/ai/Response" {
  * @see {@link layer} for creating a `LanguageModel.LanguageModel` layer directly
  * @see {@link make} for constructing the language model service effectfully
  *
+ * @stability unstable
  * @category constructors
  * @since 4.0.0
  */
@@ -683,6 +714,7 @@ export const model = (
  * @see {@link layer} for providing the service as a `Layer`
  * @see {@link model} for creating a model descriptor for `AiModel.provide`
  *
+ * @stability unstable
  * @category constructors
  * @since 4.0.0
  */
@@ -710,11 +742,8 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
       readonly payload: typeof Generated.BetaCreateMessageParams.Encoded
     }, AiError.AiError> {
       const betas = new Set<string>()
-      const modelCapabilities = getModelCapabilities(config.model!)
-      const capabilities = Predicate.isNotUndefined(config.structuredOutputs)
-        ? { ...modelCapabilities, supportsStructuredOutput: config.structuredOutputs }
-        : modelCapabilities
-      const { messages, system } = yield* prepareMessages({ betas, options, toolNameMapper })
+      const capabilities = getConfigCapabilities(config)
+      const { messages, system } = yield* prepareMessages({ betas, capabilities, options, toolNameMapper })
       const outputFormat = yield* getOutputFormat({ capabilities, options })
       const { tools, toolChoice } = yield* prepareTools({ betas, capabilities, config, options })
       const params: Mutable<typeof Generated.BetaMessagesPostParams.Encoded> = {}
@@ -726,6 +755,7 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
         output_config,
         strictJsonSchema: _strictJsonSchema,
         structuredOutputs: _structuredOutputs,
+        midConversationSystemMessages: _midConversationSystemMessages,
         ...requestConfig
       } = config
       const payload: Mutable<typeof Generated.BetaCreateMessageParams.Encoded> = {
@@ -752,6 +782,10 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
 
   return yield* LanguageModel.make({
     codecTransformer: toCodecAnthropic,
+    supportsSystemMessagesInHistory: Effect.map(
+      makeConfig,
+      (config) => getConfigCapabilities(config).supportsMidConversationSystemMessages
+    ),
     generateText: Effect.fnUntraced(function*(options) {
       const config = yield* makeConfig
       const toolNameMapper = new Tool.NameMapper(options.tools)
@@ -791,6 +825,7 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
  * @see {@link make} for constructing the language model service effectfully
  * @see {@link model} for creating a model service directly
  *
+ * @stability unstable
  * @category layers
  * @since 4.0.0
  */
@@ -817,6 +852,7 @@ export const layer = (options: {
  *
  * @see {@link Config} for available Anthropic request configuration fields
  *
+ * @stability unstable
  * @category configuration
  * @since 4.0.0
  */
@@ -843,8 +879,9 @@ export const withConfigOverride: {
 // =============================================================================
 
 const prepareMessages = Effect.fnUntraced(
-  function*<Tools extends ReadonlyArray<Tool.Any>>({ betas, options, toolNameMapper }: {
+  function*<Tools extends ReadonlyArray<Tool.Any>>({ betas, capabilities, options, toolNameMapper }: {
     readonly betas: Set<string>
+    readonly capabilities: ModelCapabilities
     readonly options: LanguageModel.ProviderOptions
     readonly toolNameMapper: Tool.NameMapper<Tools>
   }): Effect.fn.Return<{
@@ -853,8 +890,19 @@ const prepareMessages = Effect.fnUntraced(
   }, AiError.AiError> {
     const groups = groupMessages(options.prompt)
 
-    let system: Array<typeof Generated.BetaRequestTextBlock.Encoded> | undefined = undefined
+    // A system message in history must directly follow a user turn and directly
+    // precede an assistant turn or the end of the prompt, so later instructions
+    // are held until the next assistant turn. If any of them cannot be placed
+    // that way, every instruction goes in the top-level `system` field instead:
+    // inline instructions override top-level ones, so mixing would reorder them.
+    const inlineSystem = capabilities.supportsMidConversationSystemMessages &&
+      groups.every((group, i) =>
+        i === 0 || group.type !== "system" || groups[i - 1].type === "user" || groups[i + 1]?.type === "user"
+      )
+
+    const system: Array<typeof Generated.BetaRequestTextBlock.Encoded> = []
     const messages: Array<typeof Generated.BetaInputMessage.Encoded> = []
+    let pendingSystem: Array<typeof Generated.BetaRequestTextBlock.Encoded> = []
 
     for (let i = 0; i < groups.length; i++) {
       const group = groups[i]
@@ -862,11 +910,14 @@ const prepareMessages = Effect.fnUntraced(
 
       switch (group.type) {
         case "system": {
-          system = group.messages.map((message) => ({
-            type: "text",
-            text: message.content,
-            cache_control: getCacheControl(message)
-          }))
+          const target = i === 0 || !inlineSystem ? system : pendingSystem
+          for (const message of group.messages) {
+            target.push({
+              type: "text",
+              text: message.content,
+              cache_control: getCacheControl(message)
+            })
+          }
           break
         }
 
@@ -910,7 +961,7 @@ const prepareMessages = Effect.fnUntraced(
                             media_type: mediaType,
                             data: typeof part.data === "string"
                               ? part.data.replace(/^data:[^;]+;base64,/, "")
-                              : Encoding.encodeBase64(part.data)
+                              : Base64.encode(part.data)
                           } as const
 
                         content.push({ type: "image", source, cache_control: cacheControl })
@@ -929,7 +980,7 @@ const prepareMessages = Effect.fnUntraced(
                           ? {
                             type: "base64",
                             media_type: "application/pdf",
-                            data: typeof part.data === "string" ? part.data : Encoding.encodeBase64(part.data)
+                            data: typeof part.data === "string" ? part.data : Base64.encode(part.data)
                           } as const
                           : {
                             type: "text",
@@ -999,6 +1050,11 @@ const prepareMessages = Effect.fnUntraced(
         }
 
         case "assistant": {
+          if (pendingSystem.length > 0) {
+            messages.push({ role: "system", content: pendingSystem })
+            pendingSystem = []
+          }
+
           const content: Array<typeof Generated.BetaContentBlock.Encoded> = []
           const mcpToolIds = new Set<string>()
 
@@ -1237,8 +1293,12 @@ const prepareMessages = Effect.fnUntraced(
       }
     }
 
+    if (pendingSystem.length > 0) {
+      messages.push({ role: "system", content: pendingSystem })
+    }
+
     return {
-      system,
+      system: system.length > 0 ? system : undefined,
       messages
     }
   }
@@ -1265,6 +1325,7 @@ const prepareMessages = Effect.fnUntraced(
  *
  * @see {@link AnthropicProviderDefinedTool} for the request shape used by Anthropic built-in provider tools
  *
+ * @stability unstable
  * @category tools
  * @since 4.0.0
  */
@@ -1278,6 +1339,7 @@ export type AnthropicUserDefinedTool = typeof Generated.BetaTool.Encoded
  * These include Anthropic's built-in tools like computer use, code execution,
  * web search, and text editing.
  *
+ * @stability unstable
  * @category tools
  * @since 4.0.0
  */
@@ -2699,13 +2761,22 @@ const makeStreamResponse = Effect.fnUntraced(
                     }
                   }
 
+                  const toolParams = yield* Effect.try({
+                    try: () => Tool.unsafeSecureJsonParse(finalParams),
+                    catch: (cause) =>
+                      AiError.make({
+                        module: "AnthropicLanguageModel",
+                        method: "makeStreamResponse",
+                        reason: new AiError.ToolParameterValidationError({
+                          toolName: contentBlock.name,
+                          description: `Failed to securely JSON parse tool parameters: ${cause}`
+                        })
+                      })
+                  })
+
                   const params = contentBlock.providerExecuted === true
-                    ? Tool.unsafeSecureJsonParse(finalParams)
-                    : yield* transformToolCallParams(
-                      options.tools,
-                      contentBlock.name,
-                      Tool.unsafeSecureJsonParse(finalParams)
-                    )
+                    ? toolParams
+                    : yield* transformToolCallParams(options.tools, contentBlock.name, toolParams)
 
                   parts.push({
                     type: "tool-call",
@@ -3010,14 +3081,25 @@ const processCitation = Effect.fnUntraced(
 interface ModelCapabilities {
   readonly maxOutputTokens: number
   readonly supportsStructuredOutput: boolean
+  readonly supportsMidConversationSystemMessages: boolean
+}
+
+const getConfigCapabilities = (config: typeof Config.Service & { readonly model: string }): ModelCapabilities => {
+  const capabilities = getModelCapabilities(config.model)
+  return {
+    ...capabilities,
+    supportsStructuredOutput: config.structuredOutputs ?? capabilities.supportsStructuredOutput,
+    supportsMidConversationSystemMessages: config.midConversationSystemMessages ??
+      capabilities.supportsMidConversationSystemMessages
+  }
 }
 
 /**
- * Returns the capabilities of a Claude model that are used for defaults and feature selection.
- * Legacy models are listed as exceptions so newly released models inherit modern defaults.
+ * Returns model defaults, optimistically assuming modern capabilities for unknown IDs.
  *
  * @see https://docs.claude.com/en/docs/about-claude/models/overview#model-comparison-table
  * @see https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+ * @see https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages
  */
 const getModelCapabilities = (modelId: string): ModelCapabilities => {
   if (
@@ -3027,12 +3109,14 @@ const getModelCapabilities = (modelId: string): ModelCapabilities => {
   ) {
     return {
       maxOutputTokens: 64000,
-      supportsStructuredOutput: true
+      supportsStructuredOutput: true,
+      supportsMidConversationSystemMessages: false
     }
   } else if (modelId.includes("claude-opus-4-1")) {
     return {
       maxOutputTokens: 32000,
-      supportsStructuredOutput: true
+      supportsStructuredOutput: true,
+      supportsMidConversationSystemMessages: false
     }
   } else if (
     modelId.includes("claude-sonnet-4-0") ||
@@ -3041,7 +3125,8 @@ const getModelCapabilities = (modelId: string): ModelCapabilities => {
   ) {
     return {
       maxOutputTokens: 64000,
-      supportsStructuredOutput: false
+      supportsStructuredOutput: false,
+      supportsMidConversationSystemMessages: false
     }
   } else if (
     modelId.includes("claude-opus-4-0") ||
@@ -3049,22 +3134,33 @@ const getModelCapabilities = (modelId: string): ModelCapabilities => {
   ) {
     return {
       maxOutputTokens: 32000,
-      supportsStructuredOutput: false
+      supportsStructuredOutput: false,
+      supportsMidConversationSystemMessages: false
     }
   } else if (modelId.includes("claude-3-5-haiku")) {
     return {
       maxOutputTokens: 8192,
-      supportsStructuredOutput: false
+      supportsStructuredOutput: false,
+      supportsMidConversationSystemMessages: false
     }
   } else if (modelId.includes("claude-3-")) {
     return {
       maxOutputTokens: 4096,
-      supportsStructuredOutput: false
+      supportsStructuredOutput: false,
+      supportsMidConversationSystemMessages: false
     }
   } else {
     return {
       maxOutputTokens: 128000,
-      supportsStructuredOutput: true
+      supportsStructuredOutput: true,
+      supportsMidConversationSystemMessages: !(
+        modelId.includes("claude-opus-4-6") ||
+        modelId.includes("claude-opus-4-7") ||
+        modelId.includes("claude-sonnet-4-6") ||
+        modelId.includes("claude-mythos-preview") ||
+        // Match Sonnet 5, excluding minor versions such as 5.5.
+        /claude-sonnet-5(?!-\d\b)/.test(modelId)
+      )
     }
   }
 }

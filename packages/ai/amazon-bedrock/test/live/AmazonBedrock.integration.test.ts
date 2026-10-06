@@ -7,12 +7,12 @@
 import { AmazonBedrockLanguageModel } from "@effect/ai-amazon-bedrock"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { LanguageModel, Prompt } from "effect/unstable/ai"
+import { LanguageModel, Prompt } from "effect/ai"
 import { assertDisjointUsage, captureRawUsage, liveDisabled, modelLayer } from "./helpers.ts"
 
 const TIMEOUT = 120_000
 
-describe.skipIf(liveDisabled)("Amazon Bedrock (live)", { sequential: true }, () => {
+describe.skipIf(liveDisabled)("Amazon Bedrock (live)", { concurrent: false }, () => {
   it.effect("generateText round-trips against the Converse API", () =>
     Effect.gen(function*() {
       const response = yield* LanguageModel.generateText({ prompt: "Reply with exactly: ok" })

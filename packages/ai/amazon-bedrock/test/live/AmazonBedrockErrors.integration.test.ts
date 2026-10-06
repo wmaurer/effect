@@ -14,7 +14,7 @@
  */
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Redacted } from "effect"
-import { AiError, LanguageModel } from "effect/unstable/ai"
+import { AiError, LanguageModel } from "effect/ai"
 import { brokenCredentialsLayer, liveDisabled, unsignedLayer } from "./helpers.ts"
 
 const TIMEOUT = 60_000
@@ -50,7 +50,7 @@ const authenticationFailure = (
     return error.reason as typeof AiError.AuthenticationError.Type
   })
 
-describe.skipIf(liveDisabled)("Amazon Bedrock authentication errors (live)", { sequential: true }, () => {
+describe.skipIf(liveDisabled)("Amazon Bedrock authentication errors (live)", { concurrent: false }, () => {
   it.effect("classifies an unknown access key id as InvalidKey", () =>
     Effect.gen(function*() {
       const reason = yield* authenticationFailure(

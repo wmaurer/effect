@@ -18,10 +18,18 @@
  *
  * @since 4.0.0
  */
+import * as AiError from "effect/ai/AiError"
+import { toCodecAnthropic } from "effect/ai/AnthropicStructuredOutput"
+import * as IdGenerator from "effect/ai/IdGenerator"
+import * as LanguageModel from "effect/ai/LanguageModel"
+import * as AiModel from "effect/ai/Model"
+import type * as Prompt from "effect/ai/Prompt"
+import type * as Response from "effect/ai/Response"
+import * as Tool from "effect/ai/Tool"
 import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
-import * as Encoding from "effect/Encoding"
+import * as Base64 from "effect/encoding/Base64"
 import { dual } from "effect/Function"
 import * as Layer from "effect/Layer"
 import * as Predicate from "effect/Predicate"
@@ -30,14 +38,6 @@ import type * as Schema from "effect/Schema"
 import * as SchemaAST from "effect/SchemaAST"
 import * as Stream from "effect/Stream"
 import type { Mutable, Simplify } from "effect/Types"
-import * as AiError from "effect/unstable/ai/AiError"
-import { toCodecAnthropic } from "effect/unstable/ai/AnthropicStructuredOutput"
-import * as IdGenerator from "effect/unstable/ai/IdGenerator"
-import * as LanguageModel from "effect/unstable/ai/LanguageModel"
-import * as AiModel from "effect/unstable/ai/Model"
-import type * as Prompt from "effect/unstable/ai/Prompt"
-import type * as Response from "effect/unstable/ai/Response"
-import * as Tool from "effect/unstable/ai/Tool"
 import { AmazonBedrockClient } from "./AmazonBedrockClient.ts"
 import type {
   CachePointBlock,
@@ -104,7 +104,7 @@ export type CachePoint = typeof CachePointBlock.Encoded
  * ```ts
  * import { AmazonBedrockLanguageModel } from "@effect/ai-amazon-bedrock"
  * import { Schema } from "effect"
- * import { Tool } from "effect/unstable/ai"
+ * import { Tool } from "effect/ai"
  *
  * const search = Tool.make("search", {
  *   parameters: Schema.Struct({ query: Schema.String })
@@ -137,7 +137,7 @@ interface CachePointOptions {
   } | null
 }
 
-declare module "effect/unstable/ai/Prompt" {
+declare module "effect/ai/Prompt" {
   /**
    * Amazon Bedrock options for system messages.
    *
@@ -258,7 +258,7 @@ interface FileOptions {
   } | null
 }
 
-declare module "effect/unstable/ai/Prompt" {
+declare module "effect/ai/Prompt" {
   /**
    * Amazon Bedrock options for file prompt parts.
    *
@@ -268,7 +268,7 @@ declare module "effect/unstable/ai/Prompt" {
   export interface FilePartOptions extends FileOptions {}
 }
 
-declare module "effect/unstable/ai/Response" {
+declare module "effect/ai/Response" {
   /**
    * Amazon Bedrock metadata for a document citation.
    *
@@ -399,7 +399,7 @@ export type ReasoningInfo = {
   readonly redactedContent: string
 }
 
-declare module "effect/unstable/ai/Prompt" {
+declare module "effect/ai/Prompt" {
   /**
    * Amazon Bedrock options for reasoning prompt parts.
    *
@@ -419,7 +419,7 @@ declare module "effect/unstable/ai/Prompt" {
   }
 }
 
-declare module "effect/unstable/ai/Response" {
+declare module "effect/ai/Response" {
   /**
    * Amazon Bedrock metadata attached to completed reasoning parts.
    *
@@ -484,7 +484,7 @@ const reasoningTextInfo = (signature: string | undefined): ReasoningInfo => ({
  *
  * ```ts
  * import { AmazonBedrockLanguageModel } from "@effect/ai-amazon-bedrock"
- * import { LanguageModel } from "effect/unstable/ai"
+ * import { LanguageModel } from "effect/ai"
  *
  * const answer = LanguageModel.generateText({
  *   prompt: "How many r's are in strawberry?"
@@ -694,7 +694,7 @@ const fileSource: (
     }
     return { s3Location: { uri: url.toString() } }
   }
-  return { bytes: typeof data === "string" ? data : Encoding.encodeBase64(data) }
+  return { bytes: typeof data === "string" ? data : Base64.encode(data) }
 })
 
 /**
@@ -723,7 +723,7 @@ const documentSource: (
     if (data instanceof Uint8Array) {
       return { text: new TextDecoder().decode(data) }
     }
-    const decoded = Encoding.decodeBase64String(data as string)
+    const decoded = Base64.decodeString(data as string)
     if (Result.isFailure(decoded)) {
       return yield* AiError.make({
         module: "AmazonBedrockLanguageModel",
@@ -1039,7 +1039,7 @@ const prepareTools: (
   } else if ("tool" in choice) {
     toolChoice = { tool: { name: choice.tool } }
   } else {
-    // `generateText` and `streamText` in `effect/unstable/ai/LanguageModel`
+    // `generateText` and `streamText` in `effect/ai/LanguageModel`
     // already filter the toolkit by `toolChoice.oneOf` before a provider sees
     // it, so on that path this is a no-op. It's defence for `prepareTools`'
     // own contract: it keeps each tool's cache point with the tool it

@@ -11,7 +11,7 @@
  */
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Schema, Stream } from "effect"
-import { LanguageModel, Tool, Toolkit } from "effect/unstable/ai"
+import { LanguageModel, Tool, Toolkit } from "effect/ai"
 import { liveDisabled, modelLayer } from "./helpers.ts"
 
 const TIMEOUT = 120_000
@@ -20,7 +20,7 @@ const TIMEOUT = 120_000
 const collect = <A, E, R>(stream: Stream.Stream<A, E, R>) =>
   stream.pipe(Stream.runCollect, Effect.map((chunk) => globalThis.Array.from(chunk)))
 
-describe.skipIf(liveDisabled)("Amazon Bedrock streaming (live)", { sequential: true }, () => {
+describe.skipIf(liveDisabled)("Amazon Bedrock streaming (live)", { concurrent: false }, () => {
   it.effect("decodes real event-stream frames into incremental text parts", () =>
     Effect.gen(function*() {
       const parts = yield* collect(

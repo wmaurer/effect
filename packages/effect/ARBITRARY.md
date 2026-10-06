@@ -14,12 +14,8 @@ Effect divides the work into three parts:
   it as an input generator with built-in shrinking.
 - `it.prop`, `it.effect.prop`, or `Arbitrary.checkEffect` runs the rule against generated inputs.
 
-The API used here is currently available from `effect/unstable/arbitrary`. The `unstable` segment matters:
-the ideas are stable, but names, result types, generation policies, and replay format may still change before this
-module is promoted.
-
-If you are upgrading from the earlier Schema arbitrary integration available in `effect@4.0.0-rc.109`, see the
-[migration guide](ARBITRARY-MIGRATION.md).
+The API is available from `effect/Arbitrary` or as the `Arbitrary` export from `effect`. It is marked `@stability unstable`:
+names, result types, generation policies, and replay format may still change before this module is promoted.
 
 ## Writing a First Property
 
@@ -28,7 +24,7 @@ Consider the rule “adding zero does not change an integer.” With `@effect/vi
 ```ts
 import { it } from "@effect/vitest"
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const integer = Arbitrary.schema(Schema.Int)
 
@@ -62,7 +58,7 @@ without overflow or loss of precision, we should restrict the inputs accordingly
 
 ```ts
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const SmallInt = Schema.Int.check(
   Schema.isBetween({ minimum: -100, maximum: 100 })
@@ -118,7 +114,7 @@ Use:
 
 ```ts
 import { Result, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const integers = Arbitrary.schema(Schema.Int)
 
@@ -186,7 +182,7 @@ callback when you can, because creating a Schema inside the callback repeats tha
 
 ```ts
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const Length = Arbitrary.schema(
   Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 4 }))
@@ -224,7 +220,7 @@ important transition:
 
 ```ts
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const Key = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 20 }))
 
@@ -288,7 +284,7 @@ the result instead of immediately failing a Vitest test. It accepts a function t
 
 ```ts
 import { Effect, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const values = Arbitrary.schema(Schema.Array(Schema.Int))
 
@@ -306,7 +302,7 @@ A property may also return an `Effect`, so it can use Effect services or fail th
 
 ```ts
 import { Effect, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const program = Arbitrary.checkEffect(
   Arbitrary.schema(Schema.String),
@@ -348,7 +344,7 @@ rule is often called a **law**.
 ```ts
 import { it } from "@effect/vitest"
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const smallInt = Arbitrary.schema(
   Schema.Int.check(Schema.isBetween({ minimum: -100, maximum: 100 }))
@@ -483,7 +479,7 @@ and update operations below are correct, but `front` deliberately reads the last
 ```ts
 import { assert, describe, it } from "@effect/vitest"
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 interface Queue {
   readonly front: ReadonlyArray<number>
@@ -623,7 +619,7 @@ sets directly, it generates command sequences and runs the same history against 
 ```ts
 import { it } from "@effect/vitest"
 import { HashSet, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const Key = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 20 })
@@ -687,7 +683,7 @@ reported counterexample:
 
 ```ts
 import { Effect, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const arbitrary = Arbitrary.schema(Schema.Int)
 
@@ -797,7 +793,7 @@ meaning from the object shape:
 
 ```ts
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 interface Literal {
   readonly _tag: "Literal"
@@ -868,7 +864,7 @@ Recursive Schemas are supported as long as there is a way for generation to stop
 
 ```ts
 import { Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 interface Node {
   readonly value: string
@@ -951,7 +947,7 @@ works needs no Arbitrary-specific annotation.
 ```ts
 import { assert, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { Arbitrary } from "effect/unstable/arbitrary"
+import * as Arbitrary from "effect/Arbitrary"
 
 const Name = Arbitrary.schema(Schema.Literals(["Ada", "Grace"]))
 
@@ -1248,10 +1244,14 @@ can alter generated values, simplification, replay, performance, or bundle size 
   to `Schema.Struct`, `Schema.Record`, `Schema.Json`, and record-shaped `all`, but not to arrays, tuples, declarations, or
   collection classes.
 - Integer and BigInt generation avoids favoring some values accidentally. It tries boundary values more often on some
-  runs. Number generation includes signed zero, very small values, infinities, and `NaN` when the Schema permits them.
-  Finite and integer checks exclude the values they promise to exclude.
-- The magnitude of unbounded integers grows with `size`. Ordinary strings combine printable ASCII with a fixed set of
-  JavaScript edge cases. Regular-expression length is measured in UTF-16 code units, matching JavaScript strings.
+  runs. Unbounded BigInts select their bit length separately from their value, mixing ordinary magnitudes with much
+  wider values even at a small `size`. Number generation includes signed zero, very small values, infinities, and `NaN`
+  when the Schema permits them. Finite and integer checks exclude the values they promise to exclude.
+- BigDecimal generation selects precision and decimal exponent independently, while ordered constraints are projected
+  to the selected scale. Its simplifications operate on the represented numeric value, so a fixed generated scale does
+  not dictate the final counterexample. Local simplification continues between passing and failing values with a finite
+  limit on added precision. Ordinary strings combine printable ASCII with a fixed set of JavaScript edge cases.
+  Regular-expression length is measured in UTF-16 code units, matching JavaScript strings.
 - Exact probabilities, the value produced by a particular seed, and the order of simplifications may change. Source
   code comments credit algorithms adapted from other property-testing and random-number implementations.
 
