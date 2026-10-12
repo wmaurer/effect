@@ -214,7 +214,7 @@ export type PartConstructorParams<P extends Part> = Omit<P, typeof PartTypeId | 
   /**
    * Optional provider-specific options for this part.
    */
-  readonly options?: Part["options"] | undefined
+  readonly options?: P["options"] | undefined
 }
 
 // =============================================================================
@@ -1149,6 +1149,10 @@ export const makeMessage = <const Role extends Message["role"]>(
 export type MessageConstructorParams<M extends Message> = Omit<M, typeof MessageTypeId | "role" | "options"> & {
   /**
    * Optional provider-specific options for this message.
+   *
+   * These are the options of the message being constructed, not of a part: a
+   * provider augments the message and part options interfaces with different
+   * shapes, so the two are not interchangeable.
    */
   readonly options?: M["options"] | undefined
 }
