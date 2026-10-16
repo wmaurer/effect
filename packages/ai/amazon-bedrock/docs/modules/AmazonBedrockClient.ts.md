@@ -51,7 +51,7 @@ Creates an Amazon Bedrock client service with the given options.
 declare const make: (options: Options) => Effect.Effect<Service, never, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L126)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L131)
 
 Since v4.0.0
 
@@ -67,7 +67,7 @@ Creates a layer for the Amazon Bedrock client with the given options.
 declare const layer: (options: Options) => Layer.Layer<AmazonBedrockClient, never, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L220)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L226)
 
 Since v4.0.0
 
@@ -89,7 +89,7 @@ declare const layerConfig: (options: {
 }) => Layer.Layer<AmazonBedrockClient, Config.ConfigError, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L230)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L237)
 
 Since v4.0.0
 
@@ -122,7 +122,7 @@ export interface Service {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L50)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L52)
 
 Since v4.0.0
 
@@ -156,7 +156,7 @@ type Options = {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L92)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L96)
 
 Since v4.0.0
 
@@ -172,6 +172,6 @@ Service tag for the Amazon Bedrock client.
 declare class AmazonBedrockClient
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L78)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L81)
 
 Since v4.0.0

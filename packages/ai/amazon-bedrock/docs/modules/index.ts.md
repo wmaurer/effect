@@ -33,7 +33,7 @@ Re-exports all named exports from the "./AmazonBedrockClient.ts" module as `Amaz
 export * as AmazonBedrockClient from "./AmazonBedrockClient.ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L10)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L12)
 
 Since v4.0.0
 
@@ -47,7 +47,7 @@ Re-exports all named exports from the "./AmazonBedrockConfig.ts" module as `Amaz
 export * as AmazonBedrockConfig from "./AmazonBedrockConfig.ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L15)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L18)
 
 Since v4.0.0
 
@@ -61,7 +61,7 @@ Re-exports all named exports from the "./AmazonBedrockEventStream.ts" module as 
 export * as AmazonBedrockEventStream from "./AmazonBedrockEventStream.ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L20)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L24)
 
 Since v4.0.0
 
@@ -75,7 +75,7 @@ Re-exports all named exports from the "./AmazonBedrockLanguageModel.ts" module a
 export * as AmazonBedrockLanguageModel from "./AmazonBedrockLanguageModel.ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L25)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L30)
 
 Since v4.0.0
 
@@ -89,6 +89,6 @@ Re-exports all named exports from the "./AmazonBedrockSchema.ts" module as `Amaz
 export * as AmazonBedrockSchema from "./AmazonBedrockSchema.ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L30)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/index.ts#L36)
 
 Since v4.0.0

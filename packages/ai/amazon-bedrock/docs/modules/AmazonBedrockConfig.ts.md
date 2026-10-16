@@ -42,7 +42,7 @@ declare const withClientTransform: {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L59)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L63)
 
 Since v4.0.0
 
@@ -59,7 +59,7 @@ transformations applied to the underlying HTTP client.
 declare class AmazonBedrockConfig
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L20)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L22)
 
 Since v4.0.0
 
@@ -69,7 +69,7 @@ Since v4.0.0
 
 Namespace containing types associated with the `AmazonBedrockConfig` service.
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L40)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L43)
 
 Since v4.0.0
 
@@ -85,6 +85,6 @@ export interface Service {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L47)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockConfig.ts#L50)
 
 Since v4.0.0
