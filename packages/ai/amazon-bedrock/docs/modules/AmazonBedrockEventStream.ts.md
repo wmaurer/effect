@@ -59,7 +59,7 @@ declare const makeChannel: <A, I, RD, IE, Done>(
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockEventStream.ts#L140)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockEventStream.ts#L143)
 
 Since v4.0.0
 
@@ -77,6 +77,6 @@ described by the `:error-code` and `:error-message` headers.
 declare class EventStreamError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockEventStream.ts#L38)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockEventStream.ts#L40)
 
 Since v4.0.0

@@ -46,13 +46,18 @@ Since v4.0.0
   - [ConverseStreamMetadataEvent (class)](#conversestreammetadataevent-class)
   - [DocumentBlock (class)](#documentblock-class)
   - [DocumentLocation (class)](#documentlocation-class)
+  - [DocumentSource](#documentsource)
   - [ImageBlock (class)](#imageblock-class)
   - [InferenceConfiguration (class)](#inferenceconfiguration-class)
   - [IntZeroOrGreater](#intzeroorgreater)
+  - [JsonSchemaDefinition](#jsonschemadefinition)
   - [MediaSource](#mediasource)
   - [Message (class)](#message-class)
   - [MessageStartEvent (class)](#messagestartevent-class)
   - [MessageStopEvent (class)](#messagestopevent-class)
+  - [OutputConfig](#outputconfig)
+  - [OutputFormat](#outputformat)
+  - [OutputFormatStructure](#outputformatstructure)
   - [ReasoningContentBlock](#reasoningcontentblock)
   - [ReasoningContentBlockDelta](#reasoningcontentblockdelta)
   - [ReasoningTextBlock (class)](#reasoningtextblock-class)
@@ -97,7 +102,7 @@ surfaced through the `Prompt` provider options, whose values must satisfy
 declare class CachePointBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L150)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L160)
 
 Since v4.0.0
 
@@ -111,7 +116,7 @@ A reference from generated content back to a source document.
 declare class Citation
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L286)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L331)
 
 Since v4.0.0
 
@@ -135,7 +140,7 @@ declare const CitationLocation: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L258)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L301)
 
 Since v4.0.0
 
@@ -155,7 +160,7 @@ Models `CitationGeneratedContent` (the answer text a citation supports),
 declare const CitationTextContent: Schema.Struct<{ readonly text: Schema.optional<Schema.String> }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L276)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L320)
 
 Since v4.0.0
 
@@ -174,7 +179,7 @@ When enabled the model may ground its answer in the document and return
 declare class CitationsConfig
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L205)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L239)
 
 Since v4.0.0
 
@@ -193,7 +198,7 @@ has citations enabled, so `content` carries the answer text itself.
 declare class CitationsContentBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L304)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L350)
 
 Since v4.0.0
 
@@ -212,7 +217,7 @@ citation per delta rather than splitting a single citation across several.
 declare class CitationsDelta
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L554)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L686)
 
 Since v4.0.0
 
@@ -249,7 +254,7 @@ declare const ContentBlock: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L325)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L372)
 
 Since v4.0.0
 
@@ -282,7 +287,7 @@ declare const ContentBlockDelta: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L575)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L708)
 
 Since v4.0.0
 
@@ -296,7 +301,7 @@ A streamed delta event for a content block.
 declare class ContentBlockDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L588)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L722)
 
 Since v4.0.0
 
@@ -318,7 +323,7 @@ declare const ContentBlockStart: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L631)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L768)
 
 Since v4.0.0
 
@@ -335,7 +340,7 @@ stream fails to decode.
 declare class ContentBlockStartEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L644)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L782)
 
 Since v4.0.0
 
@@ -349,7 +354,7 @@ A streamed stop event for a content block.
 declare class ContentBlockStopEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L601)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L736)
 
 Since v4.0.0
 
@@ -363,7 +368,7 @@ Metrics about a Converse call.
 declare class ConverseMetrics
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L480)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L607)
 
 Since v4.0.0
 
@@ -377,7 +382,7 @@ The output containing the message generated by the model.
 declare class ConverseOutput
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L470)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L596)
 
 Since v4.0.0
 
@@ -385,13 +390,24 @@ Since v4.0.0
 
 The request payload for the Converse and ConverseStream operations.
 
+**Details**
+
+`additionalModelRequestFields` carries inference parameters that are specific
+to the target model, beyond the base set Converse exposes through
+`inferenceConfig`. AWS models it as a free-form document, and it is kept
+free-form here: its shape is defined by the model, not by Converse. Extended
+thinking on an Anthropic model is enabled through it, and the thinking budget
+is drawn from the same ceiling as the visible answer, so
+`inferenceConfig.maxTokens` must exceed it. See
+`AmazonBedrockLanguageModel.Config` for a worked example.
+
 **Signature**
 
 ```ts
 declare class ConverseRequest
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L452)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L575)
 
 Since v4.0.0
 
@@ -405,7 +421,7 @@ The response from a successful Converse call.
 declare class ConverseResponse
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L490)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L618)
 
 Since v4.0.0
 
@@ -472,7 +488,7 @@ declare const ConverseResponseStreamEvent: Schema.Union<
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L692)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L833)
 
 Since v4.0.0
 
@@ -486,7 +502,7 @@ The type of `ConverseResponseStreamEvent`.
 type ConverseResponseStreamEvent = typeof ConverseResponseStreamEvent.Type
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L745)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L887)
 
 Since v4.0.0
 
@@ -500,7 +516,7 @@ The trailing metadata event for a Converse stream, carrying usage and metrics.
 declare class ConverseStreamMetadataEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L669)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L809)
 
 Since v4.0.0
 
@@ -513,13 +529,18 @@ A document content block.
 `name` is required and Bedrock restricts it to alphanumerics, single runs of
 whitespace, hyphens, parentheses and square brackets.
 
+`context` is free text telling the model how to interpret the document. AWS
+documents it in terms of citations, but the model constrains it neither in
+length nor in alphabet and does not tie it to `citations`, so it is sent
+whenever it is set.
+
 **Signature**
 
 ```ts
 declare class DocumentBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L220)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L260)
 
 Since v4.0.0
 
@@ -540,7 +561,33 @@ Models `DocumentCharLocation`, `DocumentPageLocation` and
 declare class DocumentLocation
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L240)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L282)
+
+Since v4.0.0
+
+## DocumentSource
+
+The source of a document content block.
+
+**Details**
+
+`DocumentSource` is a Smithy union, so every member is optional here. It
+adds `text` to the `bytes` / `s3Location` pair `MediaSource` carries: a
+textual document travels as a plain string rather than base64, which is
+about a quarter smaller on the wire. The union's fourth member, `content`,
+is not modelled.
+
+**Signature**
+
+```ts
+declare const DocumentSource: Schema.Struct<{
+  readonly text: Schema.optional<Schema.String>
+  readonly bytes: Schema.optional<Schema.String>
+  readonly s3Location: Schema.optional<typeof S3Location>
+}>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L210)
 
 Since v4.0.0
 
@@ -554,7 +601,7 @@ An image content block.
 declare class ImageBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L189)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L222)
 
 Since v4.0.0
 
@@ -568,7 +615,7 @@ Base inference parameters to pass to a model in a Converse call.
 declare class InferenceConfiguration
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L370)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L420)
 
 Since v4.0.0
 
@@ -582,7 +629,30 @@ A non-negative integer, used for token counts and content block indices.
 declare const IntZeroOrGreater: Schema.Int
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L27)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L29)
+
+Since v4.0.0
+
+## JsonSchemaDefinition
+
+A JSON Schema the model's output must conform to.
+
+**Details**
+
+`schema` is the JSON Schema serialized to a string: Converse models it as a
+`String`, not a document, and rejects an object here.
+
+**Signature**
+
+```ts
+declare const JsonSchemaDefinition: Schema.Struct<{
+  readonly schema: Schema.String
+  readonly name: Schema.optionalKey<Schema.String>
+  readonly description: Schema.optionalKey<Schema.String>
+}>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L513)
 
 Since v4.0.0
 
@@ -605,7 +675,7 @@ declare const MediaSource: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L178)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L190)
 
 Since v4.0.0
 
@@ -619,7 +689,7 @@ A message within a Converse conversation.
 declare class Message
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L343)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L391)
 
 Since v4.0.0
 
@@ -633,7 +703,7 @@ The start of a streamed message.
 declare class MessageStartEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L507)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L636)
 
 Since v4.0.0
 
@@ -647,7 +717,81 @@ The stop event for a streamed message.
 declare class MessageStopEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L657)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L796)
+
+Since v4.0.0
+
+## OutputConfig
+
+Output configuration for a Converse request: native structured output
+(`textFormat`) and the model's effort level (`effort`, one of `low`,
+`medium`, `high`, `xhigh` or `max` on the models that accept it).
+
+**Signature**
+
+```ts
+declare const OutputConfig: Schema.Struct<{
+  readonly textFormat: Schema.optionalKey<
+    Schema.Struct<{
+      readonly type: Schema.Literal<"json_schema">
+      readonly structure: Schema.Struct<{
+        readonly jsonSchema: Schema.Struct<{
+          readonly schema: Schema.String
+          readonly name: Schema.optionalKey<Schema.String>
+          readonly description: Schema.optionalKey<Schema.String>
+        }>
+      }>
+    }>
+  >
+  readonly effort: Schema.optionalKey<Schema.String>
+}>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L552)
+
+Since v4.0.0
+
+## OutputFormat
+
+Structured output parameters for a Converse request.
+
+**Signature**
+
+```ts
+declare const OutputFormat: Schema.Struct<{
+  readonly type: Schema.Literal<"json_schema">
+  readonly structure: Schema.Struct<{
+    readonly jsonSchema: Schema.Struct<{
+      readonly schema: Schema.String
+      readonly name: Schema.optionalKey<Schema.String>
+      readonly description: Schema.optionalKey<Schema.String>
+    }>
+  }>
+}>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L538)
+
+Since v4.0.0
+
+## OutputFormatStructure
+
+The structure the model's output must adhere to. A union on the wire whose
+only member today is `jsonSchema`.
+
+**Signature**
+
+```ts
+declare const OutputFormatStructure: Schema.Struct<{
+  readonly jsonSchema: Schema.Struct<{
+    readonly schema: Schema.String
+    readonly name: Schema.optionalKey<Schema.String>
+    readonly description: Schema.optionalKey<Schema.String>
+  }>
+}>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L527)
 
 Since v4.0.0
 
@@ -671,7 +815,7 @@ declare const ReasoningContentBlock: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L127)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L136)
 
 Since v4.0.0
 
@@ -695,7 +839,7 @@ declare const ReasoningContentBlockDelta: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L537)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L668)
 
 Since v4.0.0
 
@@ -715,7 +859,7 @@ is sent in a later turn, or Bedrock rejects the request.
 declare class ReasoningTextBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L109)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L117)
 
 Since v4.0.0
 
@@ -729,7 +873,7 @@ The location of an object in an Amazon S3 bucket.
 declare class S3Location
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L161)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L172)
 
 Since v4.0.0
 
@@ -755,7 +899,7 @@ declare const StopReason: Schema.Literals<
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L35)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L38)
 
 Since v4.0.0
 
@@ -769,7 +913,7 @@ The type of `StopReason`.
 type StopReason = typeof StopReason.Type
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L53)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L57)
 
 Since v4.0.0
 
@@ -791,7 +935,7 @@ declare const SystemContentBlock: Schema.Struct<{
 }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L359)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L408)
 
 Since v4.0.0
 
@@ -805,7 +949,7 @@ Token usage statistics returned by the Converse API.
 declare class TokenUsage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L61)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L66)
 
 Since v4.0.0
 
@@ -829,7 +973,7 @@ provider cannot invoke, and is not modelled.
 declare class Tool
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L409)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L461)
 
 Since v4.0.0
 
@@ -850,7 +994,7 @@ declare const ToolChoice: Schema.Union<
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L421)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L474)
 
 Since v4.0.0
 
@@ -864,7 +1008,7 @@ The type of `ToolChoice`.
 type ToolChoice = typeof ToolChoice.Type
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L433)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L487)
 
 Since v4.0.0
 
@@ -878,7 +1022,7 @@ The tool configuration for a Converse request.
 declare class ToolConfiguration
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L441)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L496)
 
 Since v4.0.0
 
@@ -893,7 +1037,7 @@ model. Content is text-only in this provider.
 declare class ToolResultBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L92)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L99)
 
 Since v4.0.0
 
@@ -907,7 +1051,7 @@ The JSON Schema specification of a tool the model may call.
 declare class ToolSpecification
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L385)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L436)
 
 Since v4.0.0
 
@@ -921,7 +1065,7 @@ A tool-use content block: the model's request to invoke a tool.
 declare class ToolUseBlock
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L79)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L85)
 
 Since v4.0.0
 
@@ -937,7 +1081,7 @@ deltas and parses once the block stops.
 declare const ToolUseBlockDelta: Schema.Struct<{ readonly input: Schema.String }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L521)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L651)
 
 Since v4.0.0
 
@@ -952,6 +1096,6 @@ and tool name; the arguments arrive as `toolUse` deltas.
 declare const ToolUseBlockStart: Schema.Struct<{ readonly toolUseId: Schema.String; readonly name: Schema.String }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L614)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockSchema.ts#L750)
 
 Since v4.0.0

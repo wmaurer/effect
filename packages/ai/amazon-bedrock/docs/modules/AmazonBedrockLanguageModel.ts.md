@@ -13,8 +13,13 @@ abstraction onto Amazon Bedrock's Converse API.
 
 Text, tool calling, and tool-result messages are supported in both the
 streaming and non-streaming paths. Structured output is supported for
-non-streaming requests via forced tool use, since Converse has no native
-json_schema mode. Reasoning is surfaced on both paths, and reasoning blocks
+non-streaming requests via Converse's native `outputConfig.textFormat`
+json_schema mode, where it can be combined with the caller's own tools. On
+models without native support (detected from the model id, overridable with
+`Config.structuredOutputs`) the object is asked for through a tool instead:
+forced where the model accepts a forced `toolChoice`, and otherwise left
+unforced with an instruction to call it, since Claude Opus 5.5 and later
+reject forcing. Reasoning is surfaced on both paths, and reasoning blocks
 round-trip into later turns when they carry the Bedrock signature. Image and
 document file parts are converted into Converse `image` / `document` blocks;
 a media type Converse does not accept fails loudly with
@@ -53,13 +58,40 @@ Since v4.0.0
 
 Per-request configuration for the Amazon Bedrock language model.
 
+**Details**
+
+Derived from `ConverseRequest`, minus the fields built from the prompt, so
+every Converse request parameter is settable per request. That includes
+`additionalModelRequestFields`, which carries inference parameters specific
+to the target model — among them extended thinking on Anthropic models. The
+thinking budget is drawn from the same ceiling as the visible answer, so
+`inferenceConfig.maxTokens` must exceed `budget_tokens`.
+
+**Example** (Enabling extended thinking for one request)
+
+```ts
+import { AmazonBedrockLanguageModel } from "@effect/ai-amazon-bedrock"
+import { LanguageModel } from "effect/ai"
+
+const answer = LanguageModel.generateText({
+  prompt: "How many r's are in strawberry?"
+}).pipe(
+  AmazonBedrockLanguageModel.withConfigOverride({
+    additionalModelRequestFields: {
+      thinking: { type: "enabled", budget_tokens: 1024 }
+    },
+    inferenceConfig: { maxTokens: 4096 }
+  })
+)
+```
+
 **Signature**
 
 ```ts
 declare class Config
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L467)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L529)
 
 Since v4.0.0
 
@@ -76,7 +108,7 @@ declare const withConfigOverride: {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L586)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L714)
 
 Since v4.0.0
 
@@ -93,10 +125,10 @@ optional request defaults.
 declare const make: (args_0: {
   readonly model: (string & {}) | Model
   readonly config?: Omit<typeof Config.Service, "modelId"> | undefined
-}) => Effect.Effect<LanguageModel.Service, never, AmazonBedrockClient>
+}) => Effect.Effect<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L503)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L593)
 
 Since v4.0.0
 
@@ -114,7 +146,7 @@ declare const model: (
 ) => AiModel.Model<"amazon-bedrock", LanguageModel.LanguageModel, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L490)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L579)
 
 Since v4.0.0
 
@@ -133,7 +165,7 @@ declare const layer: (options: {
 }) => Layer.Layer<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L574)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L701)
 
 Since v4.0.0
 
@@ -155,7 +187,7 @@ Omitting `ttl` leaves the cache lifetime to Bedrock.
 type CachePoint = typeof CachePointBlock.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L85)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L96)
 
 Since v4.0.0
 
@@ -169,7 +201,7 @@ Requests that a document be citable.
 type Citations = typeof CitationsConfig.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L226)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L246)
 
 Since v4.0.0
 
@@ -184,7 +216,7 @@ A Bedrock model identifier or cross-region inference profile id (e.g.
 type Model = string & {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L67)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L77)
 
 Since v4.0.0
 
@@ -222,7 +254,7 @@ type ReasoningInfo =
     }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L376)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L407)
 
 Since v4.0.0
 
@@ -242,7 +274,7 @@ how many cache checkpoints a single request may carry across `system`,
 `messages`, and `tools` combined, so annotate the tool at the end of the
 cacheable prefix rather than every tool in the toolkit.
 
-**Example**
+**Example** (Caching a tool definition)
 
 ```ts
 import { AmazonBedrockLanguageModel } from "@effect/ai-amazon-bedrock"
@@ -262,6 +294,6 @@ declare const ToolCachePoint: Context.Reference<
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L115)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L127)
 
 Since v4.0.0
