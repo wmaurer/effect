@@ -17,9 +17,9 @@ non-streaming requests via Converse's native `outputConfig.textFormat`
 json_schema mode, where it can be combined with the caller's own tools. On
 models without native support (detected from the model id, overridable with
 `Config.structuredOutputs`) the object is asked for through a tool instead:
-forced where the model accepts a forced `toolChoice`, and otherwise left
-unforced with an instruction to call it, since Claude Opus 5.5 and later
-reject forcing. Reasoning is surfaced on both paths, and reasoning blocks
+forced where the model accepts a forced `toolChoice` (overridable with
+`Config.forcedToolChoice`), and otherwise left unforced with an instruction
+to call it. Reasoning is surfaced on both paths, and reasoning blocks
 round-trip into later turns when they carry the Bedrock signature. Image and
 document file parts are converted into Converse `image` / `document` blocks;
 a media type Converse does not accept fails loudly with
@@ -108,7 +108,7 @@ declare const withConfigOverride: {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L714)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L730)
 
 Since v4.0.0
 
@@ -128,7 +128,7 @@ declare const make: (args_0: {
 }) => Effect.Effect<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L593)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L611)
 
 Since v4.0.0
 
@@ -146,7 +146,7 @@ declare const model: (
 ) => AiModel.Model<"amazon-bedrock", LanguageModel.LanguageModel, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L579)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L597)
 
 Since v4.0.0
 
@@ -165,7 +165,7 @@ declare const layer: (options: {
 }) => Layer.Layer<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L701)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L717)
 
 Since v4.0.0
 
