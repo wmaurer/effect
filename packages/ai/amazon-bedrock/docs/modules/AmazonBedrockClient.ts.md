@@ -51,7 +51,7 @@ Creates an Amazon Bedrock client service with the given options.
 declare const make: (options: Options) => Effect.Effect<Service, never, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L131)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L135)
 
 Since v4.0.0
 
@@ -67,7 +67,7 @@ Creates a layer for the Amazon Bedrock client with the given options.
 declare const layer: (options: Options) => Layer.Layer<AmazonBedrockClient, never, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L226)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L229)
 
 Since v4.0.0
 
@@ -89,7 +89,7 @@ declare const layerConfig: (options: {
 }) => Layer.Layer<AmazonBedrockClient, Config.ConfigError, HttpClient.HttpClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L237)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockClient.ts#L240)
 
 Since v4.0.0
 
