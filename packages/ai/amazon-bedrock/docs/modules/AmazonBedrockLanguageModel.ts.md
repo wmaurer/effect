@@ -16,17 +16,18 @@ streaming and non-streaming paths. Structured output is supported for
 non-streaming requests via Converse's native `outputConfig.textFormat`
 json_schema mode, where it can be combined with the caller's own tools. On
 models without native support (detected from the model id, overridable with
-`Config.structuredOutputs`) the object is asked for through a tool instead:
-forced where the model accepts a forced `toolChoice` (overridable with
-`Config.forcedToolChoice`), and otherwise left unforced with an instruction
-to call it. Reasoning is surfaced on both paths, and reasoning blocks
-round-trip into later turns when they carry the Bedrock signature. Image and
-document file parts are converted into Converse `image` / `document` blocks;
-a media type Converse does not accept fails loudly with
-`AiError.InvalidUserInputError` rather than silently dropping content. Prompt
-caching is opt-in per message or per part via provider options. Citations
-are opt-in per document, and the citation blocks and deltas Converse returns
-are surfaced as document source parts.
+`Config.structuredOutputs`), and on any model when the prompt holds tool
+calls but the request offers no tools, the object is asked for through a
+tool instead: forced where the model accepts a forced `toolChoice`
+(overridable with `Config.forcedToolChoice`), and otherwise left unforced
+with an instruction to call it. Reasoning is surfaced on both paths, and
+reasoning blocks round-trip into later turns when they carry the Bedrock
+signature. Image and document file parts are converted into Converse
+`image` / `document` blocks; a media type Converse does not accept fails
+loudly with `AiError.InvalidUserInputError` rather than silently dropping
+content. Prompt caching is opt-in per message or per part via provider
+options. Citations are opt-in per document, and the citation blocks and
+deltas Converse returns are surfaced as document source parts.
 
 Since v4.0.0
 
@@ -91,7 +92,7 @@ const answer = LanguageModel.generateText({
 declare class Config
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L529)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L530)
 
 Since v4.0.0
 
@@ -108,7 +109,7 @@ declare const withConfigOverride: {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L730)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L760)
 
 Since v4.0.0
 
@@ -128,7 +129,7 @@ declare const make: (args_0: {
 }) => Effect.Effect<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L611)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L617)
 
 Since v4.0.0
 
@@ -146,7 +147,7 @@ declare const model: (
 ) => AiModel.Model<"amazon-bedrock", LanguageModel.LanguageModel, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L597)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L603)
 
 Since v4.0.0
 
@@ -165,7 +166,7 @@ declare const layer: (options: {
 }) => Layer.Layer<LanguageModel.LanguageModel, never, AmazonBedrockClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L717)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L747)
 
 Since v4.0.0
 
@@ -187,7 +188,7 @@ Omitting `ttl` leaves the cache lifetime to Bedrock.
 type CachePoint = typeof CachePointBlock.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L96)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L97)
 
 Since v4.0.0
 
@@ -201,7 +202,7 @@ Requests that a document be citable.
 type Citations = typeof CitationsConfig.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L246)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L247)
 
 Since v4.0.0
 
@@ -216,7 +217,7 @@ A Bedrock model identifier or cross-region inference profile id (e.g.
 type Model = string & {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L77)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L78)
 
 Since v4.0.0
 
@@ -254,7 +255,7 @@ type ReasoningInfo =
     }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L407)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L408)
 
 Since v4.0.0
 
@@ -294,6 +295,6 @@ declare const ToolCachePoint: Context.Reference<
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L127)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/amazon-bedrock/src/AmazonBedrockLanguageModel.ts#L128)
 
 Since v4.0.0
