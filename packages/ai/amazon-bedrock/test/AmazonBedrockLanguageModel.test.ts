@@ -59,17 +59,16 @@ const layersFor = (
     Layer.provide(Layer.succeed(HttpClient.HttpClient, makeHttpClient(handler)))
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag === "Uint8Array") {
-      return JSON.parse(new TextDecoder().decode(body.body))
-    }
-    if (body._tag === "Raw" && typeof body.body === "string") {
-      return JSON.parse(body.body)
-    }
-    return yield* Effect.die(new Error(`Expected Raw or Uint8Array body, got ${body._tag}`))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag === "Uint8Array") {
+    return JSON.parse(new TextDecoder().decode(body.body))
+  }
+  if (body._tag === "Raw" && typeof body.body === "string") {
+    return JSON.parse(body.body)
+  }
+  return yield* Effect.die(new Error(`Expected Raw or Uint8Array body, got ${body._tag}`))
+})
 
 describe("AmazonBedrockLanguageModel", () => {
   describe("generateText", () => {
@@ -703,20 +702,19 @@ describe("AmazonBedrockLanguageModel", () => {
         stopReason: "end_turn"
       })
 
-    const captureUserContent = (parts: ReadonlyArray<Prompt.UserMessagePart>) =>
-      Effect.gen(function*() {
-        let captured: HttpClientRequest.HttpClientRequest | undefined = undefined
-        const handler = (request: HttpClientRequest.HttpClientRequest) => {
-          captured = request
-          return Effect.succeed(fileResponse(request))
-        }
+    const captureUserContent = Effect.fnUntraced(function*(parts: ReadonlyArray<Prompt.UserMessagePart>) {
+      let captured: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const handler = (request: HttpClientRequest.HttpClientRequest) => {
+        captured = request
+        return Effect.succeed(fileResponse(request))
+      }
 
-        const prompt = Prompt.fromMessages([Prompt.makeMessage("user", { content: parts })])
-        yield* LanguageModel.generateText({ prompt }).pipe(Effect.provide(layersFor(handler)))
+      const prompt = Prompt.fromMessages([Prompt.makeMessage("user", { content: parts })])
+      yield* LanguageModel.generateText({ prompt }).pipe(Effect.provide(layersFor(handler)))
 
-        const body = yield* getRequestBody(captured!)
-        return body.messages[0].content
-      })
+      const body = yield* getRequestBody(captured!)
+      return body.messages[0].content
+    })
 
     it.effect("encodes an image file part as an image block", () =>
       Effect.gen(function*() {
@@ -954,21 +952,20 @@ describe("AmazonBedrockLanguageModel", () => {
         stopReason: "end_turn"
       })
 
-    const captureBody = (prompt: Prompt.Prompt) =>
-      Effect.gen(function*() {
-        let captured: HttpClientRequest.HttpClientRequest | undefined = undefined
-        const handler = (request: HttpClientRequest.HttpClientRequest) => {
-          captured = request
-          return Effect.succeed(cacheResponse(request))
-        }
+    const captureBody = Effect.fnUntraced(function*(prompt: Prompt.Prompt) {
+      let captured: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const handler = (request: HttpClientRequest.HttpClientRequest) => {
+        captured = request
+        return Effect.succeed(cacheResponse(request))
+      }
 
-        // Converse rejects a prompt with tool calls unless the request offers tools.
-        yield* LanguageModel.generateText({ prompt, toolkit: globToolkit }).pipe(
-          Effect.provide(layersFor(handler)),
-          Effect.provide(globToolkitLayer)
-        )
-        return yield* getRequestBody(captured!)
-      })
+      // Converse rejects a prompt with tool calls unless the request offers tools.
+      yield* LanguageModel.generateText({ prompt, toolkit: globToolkit }).pipe(
+        Effect.provide(layersFor(handler)),
+        Effect.provide(globToolkitLayer)
+      )
+      return yield* getRequestBody(captured!)
+    })
 
     const cachePoint = { amazonBedrock: { cachePoint: { type: "default" } } } as const
 
