@@ -109,8 +109,13 @@ readonly invokeModel: <S extends Schema.Decoder<unknown>>(
 - No count check in the provider. Core does it.
 - The module doc is one paragraph, as in `OpenAiEmbeddingModel.ts:1-10`. The reasons go in the PR
   text.
-- `@since 4.1.5` everywhere. Main already uses it while the packages are at 4.1.4. Bump it if
-  4.1.5 ships first.
+- `@since 4.1.5` everywhere, the version the module first ships in. Bump it if 4.1.5 ships first.
+  - `@effect/ai-amazon-bedrock` first shipped in 4.1.4 (npm, 2026-11-11; the 0.x versions are the
+    v3 package). But its modules say `@since 4.0.0`, as #9980 wrote them.
+  - The rest of the repo uses the shipping version: `AnthropicTool.DeferLoading` has
+    `@since 4.1.2`, and main already has 93 `@since 4.1.5` tags while the packages are at 4.1.4.
+  - So 4.1.5 follows the repo rule but differs from the package's own files. Check again at PR
+    time.
 - About 180 lines.
 
 ### Why Cohere splits at 96
@@ -168,6 +173,8 @@ These stay in my lib.
 - Usage from a header is new upstream. Headers are read today only for errors. The fallback is the
   Titan body count, with `undefined` for Cohere.
 - `HttpClientResponse` in `Service.invokeModel`.
+- `@since 4.1.5` differs from the `@since 4.0.0` of the package's existing modules. A maintainer
+  may ask for one or the other.
 
 ## Before writing code
 
