@@ -72,9 +72,37 @@ These issues look stale:
   close.
 - #11 tool result status: upstream has it, so only my lib is missing it.
 
-## 3. First test PR: tool-definition cache points
+## 3. Tool-definition cache points: dropped as the first PR (2026-11-14)
 
-Reasons:
+Decision: do not start with this PR. Start with embeddings (section 4).
+
+Why:
+
+- It is low-value. Bedrock builds the cache prefix in the order `tools` → `system` →
+  `messages`, and a cache point caches everything before it. So a cache point on the system
+  message already caches all tool definitions. A cache point on a tool only helps when the
+  system prompt changes between requests but the tools do not, or to cache stable tools before
+  ones that change.
+  ([Bedrock prompt caching guide](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html):
+  "Cache checkpoints are processed in this order: `tools` → `system` → `messages`." and
+  "modifying `tools` invalidates the `system` and `messages` caches".)
+- Only Claude models accept a cache point in `tools`. Nova accepts them only in `system` and
+  `messages`.
+- Bedrock now has automatic caching, which uses one of the 4 checkpoint slots per request.
+- It is a weak test. A tiny, safe change is easy to accept, so a "yes" says little about
+  citations or embeddings. A maintainer can also fairly say "put a cache point on the system
+  message".
+- My design doc says tool definitions "cannot be cached at all". That is too strong: they
+  cannot be cached on their own, apart from the system prompt.
+
+Other providers: none has tool cache points. Anthropic's API has `cache_control` on tools
+(`Generated.BetaTool`), but the Effect provider never sets it, and no issue or PR asked for it.
+The pattern is accepted, though: `AnthropicTool.DeferLoading` (#10273) is a provider tool
+annotation built the same way (`Context.Reference`, read in `prepareTools`).
+
+Keep it for later, maybe in a wider prompt-caching PR. The original reasons and details follow.
+
+Original reasons:
 
 - It is on the #9980 follow-up list, so it is not a feature they never wanted.
 - It is tiny. Upstream `AmazonBedrockSchema.Tool` already has `cachePoint`
@@ -98,13 +126,16 @@ Details to keep:
 - My design record: `docs/design/2026-08-19-bedrock-tool-definition-caching-design.md` and the
   plan next to it, in my lib's repository.
 
-## 4. After that
+## 4. Order of PRs (changed 2026-11-14)
 
-If the cache-point PR goes in without problems:
-
-1. Document `context`: a small option.
+1. Embeddings: the clearest gap (upstream has no embedding model), the most useful to users,
+   and on the #9980 follow-up list. Start here.
 2. Citations: medium size.
-3. Embeddings: the largest, and the most useful to users.
+3. Document `context`: a small option.
+
+Optional cheap test before or next to the embeddings PR: a short issue that lists the #9980
+follow-ups, says I have working, live-tested code for embeddings, citations, and S3 sources,
+and asks which ones they would accept as PRs.
 
 Leave for later: the `generateObject` model table and credential caching. Upstream chose a
 simpler design on purpose for both, so a PR there argues against their design.
